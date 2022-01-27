@@ -41,14 +41,14 @@ static long long lcm(long long a, long long b) {
         return (b / gcd(a, b)) * a;
 }
 
-long long getHyperPeriod(std::vector<Flow> flows) {
-    long long hyperPeriod, tmp = flows[0].getPeriod();
-    for (size_t i = 1; i < flows.size(); ++i) {
-        hyperPeriod = lcm(tmp, flows[i].getPeriod());
-        tmp = hyperPeriod;
-    }
-    return hyperPeriod;
-}
+//long long getHyperPeriod(std::vector<Flow> flows) {
+//    long long hyperPeriod, tmp = flows[0].getPeriod();
+//    for (size_t i = 1; i < flows.size(); ++i) {
+//        hyperPeriod = lcm(tmp, flows[i].getPeriod());
+//        tmp = hyperPeriod;
+//    }
+//    return hyperPeriod;
+//}
 
 static int genRandInRange(int invokeIdx) {
     static std::random_device randomDevice;
@@ -76,13 +76,13 @@ int genRandFrameLen() {
     return genRandInRange(1);
 }
 
-int getWholeSendInterval(const std::vector<Flow> &flows) {
-    int ret = 0;
-    for (auto &flow: flows) {
-        ret += flow.getFrameLength() * 24;
-    }
-    return ret;
-}
+//int getWholeSendInterval(const std::vector<Flow> &flows) {
+//    int ret = 0;
+//    for (auto &flow: flows) {
+//        ret += flow.getFrameLength() * 24;
+//    }
+//    return ret;
+//}
 
 //std::vector<std::vector<Port>> getRoutes(const std::vector<Switch> &swList, const std::vector<EndSystem> &esList,
 //                                         const EndSystem &src, const EndSystem &dest) {
@@ -94,5 +94,7 @@ int getWholeSendInterval(const std::vector<Flow> &flows) {
 //
 //    return routes;
 //}
+
+
 
 #endif //Z3_SMT_UTILS_H
