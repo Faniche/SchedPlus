@@ -8,6 +8,7 @@
 
 #include <uuid/uuid.h>
 #include "NodeImpl.h"
+#include "Link.h"
 
 class Flow {
 private:
@@ -37,7 +38,7 @@ private:
     /* the Flow is multicast or not */
     bool multicast = false;
 
-    std::vector<std::vector<Node>> routes;
+    std::vector<std::vector<Link>> routes;
 
 public:
     /**
@@ -50,6 +51,28 @@ public:
      * @param multicast     The flow is multicast of not
      */
     Flow(int period, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
+
+    [[nodiscard]] const unsigned char *getId() const;
+
+    [[nodiscard]] int getOffset() const;
+
+    void setOffset(int offset);
+
+    [[nodiscard]] int getPeriod() const;
+
+    [[nodiscard]] int getFrameLength() const;
+
+    [[nodiscard]] Node *getSrc() const;
+
+    [[nodiscard]] Node *getDest() const;
+
+    [[nodiscard]] bool isCritical1() const;
+
+    [[nodiscard]] int getRep() const;
+
+    [[nodiscard]] bool isMulticast() const;
+
+
 
     std::string toString(std::ostringstream &oss);
 };
