@@ -7,8 +7,8 @@
 
 #include <sstream>
 
-Flow::Flow(int period, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast) : period(
-        period), frameLength(frameLength), src(src), dest(dest), isCritical(isCritical), rep(rep), multicast(
+Flow::Flow(int period, int deadline, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast) : period(
+        period), deadline(deadline), frameLength(frameLength), src(src), dest(dest), isCritical(isCritical), rep(rep), multicast(
         multicast) {
     uuid_generate(id);
 }
@@ -27,6 +27,10 @@ void Flow::setOffset(int _offset) {
 
 int Flow::getPeriod() const {
     return period;
+}
+
+int Flow::getDeadline() const {
+    return deadline;
 }
 
 int Flow::getFrameLength() const {

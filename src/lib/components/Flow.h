@@ -20,6 +20,9 @@ private:
     /* The interval between two frames of a Flow */
     int period = 0;
 
+    /* The deadline of arrival of frames */
+    int deadline = 0;
+
     /* The frame length include network headers of a packet of each frame */
     int frameLength = 0;
 
@@ -42,7 +45,8 @@ private:
 
 public:
     /**
-     * @param period        Period of frame.
+     * @param period        Period of frame
+     * @param deadline      deadline of frame
      * @param frameLength   Frame of length
      * @param src           Source of the flow
      * @param dest          Destination of the flow
@@ -50,7 +54,7 @@ public:
      * @param rep           The replication of the frame, default 1
      * @param multicast     The flow is multicast of not
      */
-    Flow(int period, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
+    Flow(int period, int deadline, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
 
     [[nodiscard]] const unsigned char *getId() const;
 
@@ -59,6 +63,8 @@ public:
     void setOffset(int offset);
 
     [[nodiscard]] int getPeriod() const;
+
+    [[nodiscard]] int getDeadline() const;
 
     [[nodiscard]] int getFrameLength() const;
 
