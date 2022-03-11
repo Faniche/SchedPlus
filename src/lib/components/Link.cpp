@@ -4,12 +4,21 @@
 
 #include "Link.h"
 
-Link::Link(const Port &portA, const Port &portB) : port_a(portA), port_b(portB) {
+Link::Link(Node *nodeA, Node *nodeB, const Port &portA, const Port &portB) : node_a(nodeA), node_b(nodeB),
+                                                                             port_a(portA), port_b(portB) {
     uuid_generate(id);
 }
 
 const unsigned char *Link::getId() const {
     return id;
+}
+
+Node *Link::getNodeA() const {
+    return node_a;
+}
+
+Node *Link::getNodeB() const {
+    return node_b;
 }
 
 const Port &Link::getPortA() const {

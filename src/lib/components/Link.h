@@ -8,16 +8,23 @@
 
 #include <uuid/uuid.h>
 #include "Port.h"
+#include "Node.h"
 
 class Link {
 private:
     uuid_t id{};
+    Node *node_a;
+    Node *node_b;
     Port port_a;
     Port port_b;
 public:
-    Link(const Port &portA, const Port &portB);
+    Link(Node *nodeA, Node *nodeB, const Port &portA, const Port &portB);
 
     [[nodiscard]] const unsigned char *getId() const;
+
+    [[nodiscard]] Node *getNodeA() const;
+
+    [[nodiscard]] Node *getNodeB() const;
 
     [[nodiscard]] const Port &getPortA() const;
 
