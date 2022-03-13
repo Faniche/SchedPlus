@@ -42,5 +42,40 @@ public:
     std::string &toString() override;
 };
 
+enum NODE_SEARCH_STATE {
+    NOT_VISITED,
+    VISITING,
+    VISITED
+};
+
+class GraphNode {
+private:
+    uuid_t id{};
+    std::string name;
+    NODE_SEARCH_STATE state = NOT_VISITED;
+    int hop = INT32_MAX;
+    uuid_t parent{};
+public:
+
+    GraphNode(const unsigned char *id, std::string name, NODE_SEARCH_STATE state);
+
+    GraphNode(const GraphNode &graphNode);
+
+    [[nodiscard]] const unsigned char *getId() const;
+
+    [[nodiscard]] const std::string &getName() const;
+
+    [[nodiscard]] NODE_SEARCH_STATE getState() const;
+
+    void setState(NODE_SEARCH_STATE _state);
+
+    [[nodiscard]] int getHop() const;
+
+    void setHop(int hop);
+
+    [[nodiscard]] const unsigned char *getParent() const;
+
+    void setParent (const unsigned char *parent);
+};
 
 #endif //SCHEDPLUS_NODEIMPL_H
