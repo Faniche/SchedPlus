@@ -19,8 +19,8 @@ const unsigned char *Node::getId() const {
     return id;
 }
 
-std::string &Node::getName() {
-    return this->name;
+const std::string &Node::getName() const {
+    return name;
 }
 
 void Node::setName(std::string &_name) {

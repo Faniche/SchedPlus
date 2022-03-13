@@ -26,7 +26,7 @@ public:
 
     [[nodiscard]] const unsigned char *getId() const;
 
-    std::string &getName();
+    [[nodiscard]] const std::string &getName() const;
 
     void setName(std::string& name);
 
