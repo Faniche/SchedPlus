@@ -12,6 +12,9 @@
 #define Z3_SMT_UTILS_H
 
 #include <random>
+#include <spdlog/spdlog.h>
+#include <queue>
+#include "lib/components/Flow.h"
 
 //#define MIN_FRAME_LEN 64
 //
@@ -41,14 +44,14 @@ static long long lcm(long long a, long long b) {
         return (b / gcd(a, b)) * a;
 }
 
-//long long getHyperPeriod(std::vector<Flow> flows) {
-//    long long hyperPeriod, tmp = flows[0].getPeriod();
-//    for (size_t i = 1; i < flows.size(); ++i) {
-//        hyperPeriod = lcm(tmp, flows[i].getPeriod());
-//        tmp = hyperPeriod;
-//    }
-//    return hyperPeriod;
-//}
+long long getHyperPeriod(std::vector<Flow> flows) {
+    long long hyperPeriod, tmp = flows[0].getPeriod();
+    for (size_t i = 1; i < flows.size(); ++i) {
+        hyperPeriod = lcm(tmp, flows[i].getPeriod());
+        tmp = hyperPeriod;
+    }
+    return hyperPeriod;
+}
 
 static int genRandInRange(int invokeIdx) {
     static std::random_device randomDevice;
@@ -76,25 +79,125 @@ int genRandFrameLen() {
     return genRandInRange(1);
 }
 
-//int getWholeSendInterval(const std::vector<Flow> &flows) {
-//    int ret = 0;
-//    for (auto &flow: flows) {
-//        ret += flow.getFrameLength() * 24;
-//    }
-//    return ret;
-//}
+int getWholeSendInterval(const std::vector<Flow> &flows) {
+    int ret = 0;
+    for (auto &flow: flows) {
+        ret += flow.getFrameLength() * 24;
+    }
+    return ret;
+}
 
-//std::vector<std::vector<Port>> getRoutes(const std::vector<Switch> &swList, const std::vector<EndSystem> &esList,
-//                                         const EndSystem &src, const EndSystem &dest) {
-//    std::vector<std::vector<Port>> routes;
-//    for (int i = 0; i < ; ++i) {
+std::vector<std::vector<Link>> getRoutes(const std::vector<Switch> &swList,
+                                         const std::vector<EndSystem> &esList,
+                                         const EndSystem &src,
+                                         const EndSystem &dest) {
+    std::vector<std::vector<Link>> routes;
+    for (int i = 0; i < routes.size(); ++i) {
+
+    }
+    return routes;
+}
+
+//std::vector<std::vector<Link>> getRoutes(const std::vector<Link> &links,
+//                                         std::vector<std::vector<GraphNode>>& nodesAdjacencyMatrix,
+//                                         const Node &src,
+//                                         const Node &dest) {
+//    std::vector<std::vector<Link>> routes;
+//    std::queue<GraphNode> nodeQueue;
+//    for (auto & nodeList: nodesAdjacencyMatrix) {
+//        if (uuid_compare(nodeList[0].getId(), src.getId()) == 0) {
+//            nodeList[0].setHop(0);
+//            nodeQueue.push(nodeList[0]);
+//            break;
+//        }
+//    }
+//    while (!nodeQueue.empty()) {
+//        GraphNode tmp = nodeQueue.back();
+//        for (auto &nodeList: nodesAdjacencyMatrix) {
+//            if (uuid_compare(nodeList[0].getId(), nodeQueue.back().getId()) == 0) {
+//                /* Iterate the adjacency matrix of tmp */
+//                for (auto & node : nodeList) {
+//                    if (node.getState() == NOT_VISITED) {
+//                        node.setState(VISITING);
+//                        node.setHop(nodeQueue.back().getHop() + 1);
+//                        node.setParent(nodeQueue.back().getId());
+//                        nodeQueue.push(node);
+//                    }
+//                    if (uuid_compare(node.getId(), dest.getId()) == 0) {
+//                        spdlog::info("Got");
+//                    }
+//                }
+//                nodeQueue.back().setState(VISITED);
+//                nodeQueue.pop();
+//            }
+//        }
 //
 //    }
-//
-//
+//    spdlog::info("Calculate routes finished");
 //    return routes;
 //}
 
+void initGraph(const std::vector<Node *> &nodes,
+               const std::vector<Link> &links,
+               std::vector<std::vector<Node *>> &graph) {
+    for (auto *node: nodes) {
+        std::vector<Node *> tmp{node};
+        graph.push_back(tmp);
+    }
+    for (auto &link: links) {
+        for (auto &nodeList: graph) {
+            if (nodeList[0] == link.getNodeA())
+                nodeList.push_back(link.getNodeB());
+            if (nodeList[0] == link.getNodeB())
+                nodeList.push_back(link.getNodeA());
+        }
+    }
+}
 
+void initGraph(const std::vector<Node *> &nodes,
+               const std::vector<Link> &links,
+               std::vector<std::vector<GraphNode >> &nodesAdjacencyMatrix) {
+    for (auto *node: nodes) {
+        GraphNode graphNode(node->getId(), node->getName(), NOT_VISITED);
+        std::vector<GraphNode> tmp{graphNode};
+        nodesAdjacencyMatrix.push_back(tmp);
+    }
+    for (auto &link: links) {
+        for (auto &nodeList: nodesAdjacencyMatrix) {
+            if (uuid_compare(nodeList[0].getId(), link.getNodeA()->getId()) == 0) {
+                GraphNode graphNode(link.getNodeB()->getId(), link.getNodeB()->getName(), NOT_VISITED);
+                nodeList.push_back(graphNode);
+            }
+            if (uuid_compare(nodeList[0].getId(), link.getNodeB()->getId()) == 0) {
+                GraphNode graphNode(link.getNodeA()->getId(), link.getNodeA()->getName(), NOT_VISITED);
+                nodeList.push_back(graphNode);
+            }
+        }
+    }
+}
+
+void printGraph(const std::vector<std::vector<Node *>> &graph){
+    for (auto &nodeList: graph) {
+        std::string tmp;
+        for (auto node = nodeList.begin(); node != nodeList.end(); node++) {
+            tmp.append((*node)->getName());
+            if (node < nodeList.end() - 1)
+                tmp.append(" -> ");
+        }
+        spdlog::info(tmp);
+    }
+}
+
+void printGraph(const std::vector<std::vector<GraphNode>> &nodesAdjacencyMatrix){
+    for (auto &nodeList: nodesAdjacencyMatrix) {
+        std::string tmp;
+        for (auto node = nodeList.begin(); node != nodeList.end(); node++) {
+            tmp.append((*node).getName());
+            if (node < nodeList.end() - 1)
+                tmp.append(" -> ");
+        }
+        spdlog::info(tmp);
+    }
+}
 
 #endif //Z3_SMT_UTILS_H
