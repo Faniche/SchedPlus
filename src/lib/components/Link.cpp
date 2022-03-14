@@ -28,3 +28,16 @@ const Port &Link::getPortA() const {
 const Port &Link::getPortB() const {
     return port_b;
 }
+
+const Link *Link::nodesIdxToLink(const Node *nodeA, const Node *nodeB, const std::vector<Link> &links) {
+    for (const auto & link : links) {
+        if ((uuid_compare(link.getNodeA()->getId(), nodeA->getId()) == 0
+             && uuid_compare(link.getNodeB()->getId(), nodeB->getId()) == 0)
+            || (uuid_compare(link.getNodeA()->getId(), nodeB->getId()) == 0
+                && uuid_compare(link.getNodeB()->getId(), nodeA->getId()) == 0)) {
+            return &link;
+        }
+    }
+    return nullptr;
+}
+

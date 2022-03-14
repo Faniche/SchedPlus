@@ -7,6 +7,7 @@
 
 
 #include <uuid/uuid.h>
+#include <vector>
 #include "Port.h"
 #include "Node.h"
 
@@ -29,6 +30,8 @@ public:
     [[nodiscard]] const Port &getPortA() const;
 
     [[nodiscard]] const Port &getPortB() const;
+
+    const static Link * nodesIdxToLink(const Node *nodeA, const Node* nodeB, const std::vector<Link> &links);
 };
 
 
