@@ -62,6 +62,7 @@ std::string Flow::toString(std::ostringstream &oss) {
     oss << "\t" << R"("id": ")" << id << "\"," << std::endl;
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
+    oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
     oss << "\t" << R"("src": ")" << src->getName() << "," << std::endl;
     oss << "\t" << R"("dest": ")" << dest->getName() << "," << std::endl;
     oss << "\t" << R"("isCritical": )" << std::boolalpha << isCritical << "," << std::endl;
