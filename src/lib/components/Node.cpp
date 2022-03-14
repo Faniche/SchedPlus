@@ -31,6 +31,15 @@ NODE_TYPE Node::getNodeType() const {
     return nodeType;
 }
 
+size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
+    for (const auto&[key, value]: map) {
+        if (uuid_compare(node->getId(), value->getId()) == 0) {
+            return key;
+        }
+    }
+    return INT64_MAX;
+}
+
 Node *createNode(NODE_TYPE nodeType, const std::string& name){
     Node *node;
     switch (nodeType) {

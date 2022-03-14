@@ -6,6 +6,7 @@
 #define SCHEDPLUS_NODE_H
 
 #include <string>
+#include <map>
 #include "Port.h"
 
 enum NODE_TYPE {
@@ -33,6 +34,8 @@ public:
     [[nodiscard]] NODE_TYPE getNodeType() const;
 
     virtual std::string& toString() = 0;
+
+    static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
 };
 
 Node *createNode(NODE_TYPE nodeType, const std::string& name);
