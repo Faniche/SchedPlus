@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] const Port &getPortB() const;
 
-    const static Link * nodesIdxToLink(const Node *nodeA, const Node* nodeB, const std::vector<Link> &links);
+    static Link * nodesIdxToLink(const Node *nodeA, const Node* nodeB, std::vector<Link> &links);
 };
 
 
