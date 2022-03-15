@@ -7,10 +7,17 @@
 
 #include <sstream>
 
-Flow::Flow(int period, int deadline, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast) : period(
-        period), deadline(deadline), frameLength(frameLength), src(src), dest(dest), isCritical(isCritical), rep(rep), multicast(
-        multicast) {
+Flow::Flow(int period, int deadline, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast)
+        : period(period),
+        deadline(deadline),
+        frameLength(frameLength),
+        src(src),
+        dest(dest),
+        isCritical(isCritical),
+        rep(rep),
+        multicast(multicast) {
     uuid_generate(id);
+    priorityCodePoint = BE;
 }
 
 const unsigned char *Flow::getId() const {
@@ -37,6 +44,15 @@ int Flow::getFrameLength() const {
     return frameLength;
 }
 
+PRIORITY_CODE_POINT Flow::getPriorityCodePoint() const {
+    return priorityCodePoint;
+}
+
+void Flow::setPriorityCodePoint(PRIORITY_CODE_POINT _priorityCodePoint) {
+    Flow::priorityCodePoint = _priorityCodePoint;
+}
+
+
 Node *Flow::getSrc() const {
     return src;
 }
@@ -57,6 +73,22 @@ bool Flow::isMulticast() const {
     return multicast;
 }
 
+const std::vector<std::vector<Link *>> &Flow::getRoutes() const {
+    return routes;
+}
+
+void Flow::setRoutes(const std::vector<Link *> &route) {
+    routes.push_back(route);
+}
+
+const std::vector<std::vector<Node *>> &Flow::getRoutesAdj() const {
+    return routesAdj;
+}
+
+void Flow::setRoutesAdj(const std::vector<Node *> &nodeVector) {
+    routesAdj.push_back(nodeVector);
+}
+
 std::string Flow::toString(std::ostringstream &oss) {
     oss << "{\n";
     oss << "\t" << R"("id": ")" << id << "\"," << std::endl;
@@ -72,15 +104,18 @@ std::string Flow::toString(std::ostringstream &oss) {
         oss << std::endl;
     } else {
         oss << "," << std::endl;
-        oss << "\t" << R"("routes": [)" << std::endl;
-//        for (size_t i = 0; i < routes.size(); ++i) {
-//            oss << "\t\t\"route" << i << "\": [" << std::endl;
-//            for (Link link: routes.at(i)) {
-//                oss << "\t\t\t{" <<
-//            }
-//        }
-//        oss << "\t\t" <<  << std::endl;
-        oss << "\t" << "]" << std::endl;
+        oss << "\t" << R"("routes": {)";
+        for (size_t i = 0; i < routesAdj.size(); ++i) {
+            oss << std::endl << "\t\t\"route" << i << "\": \"" << routesAdj[i][0]->getName();
+            for (size_t j = 1; j < routesAdj[i].size(); ++j) {
+                oss << " -> " << routesAdj[i][j]->getName();
+            }
+            oss << "\",";
+        }
+        oss.seekp(-1, std::ios_base::end);
+
+
+        oss << std::endl << "\t" << "}" << std::endl;
     }
     oss << "}" << std::endl;
     return oss.str();

@@ -9,6 +9,7 @@
 #include <uuid/uuid.h>
 #include "NodeImpl.h"
 #include "Link.h"
+#include "MyVlan.h"
 
 class Flow {
 private:
@@ -26,6 +27,8 @@ private:
     /* The frame length include network headers of a packet of each frame */
     int frameLength = 0;
 
+    PRIORITY_CODE_POINT priorityCodePoint;
+
     /* The source node of a Flow */
     Node *src;
 
@@ -41,7 +44,9 @@ private:
     /* the Flow is multicast or not */
     bool multicast = false;
 
-    std::vector<std::vector<Link>> routes;
+    std::vector<std::vector<Link *>> routes;
+
+    std::vector<std::vector<Node *>> routesAdj;
 
 public:
     /**
@@ -68,6 +73,10 @@ public:
 
     [[nodiscard]] int getFrameLength() const;
 
+    [[nodiscard]] PRIORITY_CODE_POINT getPriorityCodePoint() const;
+
+    void setPriorityCodePoint(PRIORITY_CODE_POINT priorityCodePoint);
+
     [[nodiscard]] Node *getSrc() const;
 
     [[nodiscard]] Node *getDest() const;
@@ -78,7 +87,13 @@ public:
 
     [[nodiscard]] bool isMulticast() const;
 
+    [[nodiscard]] const std::vector<std::vector<Link *>> &getRoutes() const;
 
+    void setRoutes(const std::vector<Link *>& route);
+
+    [[nodiscard]] const std::vector<std::vector<Node *>> &getRoutesAdj() const;
+
+    void setRoutesAdj(const std::vector<Node *> &nodeVector);
 
     std::string toString(std::ostringstream &oss);
 };
