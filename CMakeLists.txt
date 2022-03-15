@@ -8,7 +8,9 @@ add_executable(SchedPlus main.cpp
         src/lib/components/Node.cpp src/lib/components/Node.h
         src/lib/components/NodeImpl.cpp src/lib/components/NodeImpl.h
         src/lib/components/Link.cpp src/lib/components/Link.h
-        src/lib/components/Flow.cpp src/lib/components/Flow.h)
+        src/lib/components/Flow.cpp src/lib/components/Flow.h
+        src/lib/Route.h
+        src/lib/components/MyVlan.h)
 target_link_libraries(SchedPlus
         uuid
         spdlog)
