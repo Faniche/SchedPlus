@@ -5,40 +5,38 @@
 #include <spdlog/spdlog.h>
 #include "Link.h"
 
-Link::Link(Node *nodeA, Node *nodeB, const Port &portA, const Port &portB) : node_a(nodeA), node_b(nodeB),
-                                                                             port_a(portA), port_b(portB) {
+DirectedLink::DirectedLink(Node *_srcNode, Node *_destNode, const Port &_srcPort, const Port &_destPort) : srcNode(_srcNode), destNode(_destNode),
+                                                                                                           srcPort(_srcPort), destPort(_destPort) {
     uuid_generate(id);
 }
 
-const unsigned char *Link::getId() const {
+const unsigned char *DirectedLink::getId() const {
     return id;
 }
 
-Node *Link::getNodeA() const {
-    return node_a;
+Node *DirectedLink::getSrcNode() const {
+    return srcNode;
 }
 
-Node *Link::getNodeB() const {
-    return node_b;
+Node *DirectedLink::getDestNode() const {
+    return destNode;
 }
 
-const Port &Link::getPortA() const {
-    return port_a;
+const Port &DirectedLink::getSrcPort() const {
+    return srcPort;
 }
 
-const Port &Link::getPortB() const {
-    return port_b;
+const Port &DirectedLink::getDestPort() const {
+    return destPort;
 }
 
-Link *Link::nodesIdxToLink(const Node *nodeA, const Node *nodeB, std::vector<Link> &links) {
+DirectedLink *DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links) {
     spdlog::set_level(spdlog::level::debug);
-    spdlog::debug("nodeA: {}, nodeB: {}", nodeA->getName(), nodeB->getName());
+    spdlog::debug("_srcNode: {}, _destNode: {}", _srcNode->getName(), _destNode->getName());
     for (size_t i = 0; i < links.size(); ++i) {
         spdlog::debug("comparing link: {}", i);
-        if ((uuid_compare(links[i].getNodeA()->getId(), nodeA->getId()) == 0
-             && uuid_compare(links[i].getNodeB()->getId(), nodeB->getId()) == 0)
-            || (uuid_compare(links[i].getNodeA()->getId(), nodeB->getId()) == 0
-                && uuid_compare(links[i].getNodeB()->getId(), nodeA->getId()) == 0)) {
+        if (uuid_compare(links[i].getSrcNode()->getId(), _srcNode->getId()) == 0
+             && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
             spdlog::debug("link mem address: {}", (void *)&links[i]);
             return &links[i];
         }
@@ -46,3 +44,13 @@ Link *Link::nodesIdxToLink(const Node *nodeA, const Node *nodeB, std::vector<Lin
     return nullptr;
 }
 
+FullDuplexLink::FullDuplexLink(Node *nodeA, Node *nodeB, const Port &_portA, const Port &_portB) {
+    DirectedLink link1(nodeA, nodeB, _portA, _portB);
+    DirectedLink link2(nodeB, nodeA, _portB, _portA);
+    links.push_back(link1);
+    links.push_back(link2);
+}
+
+const std::vector<DirectedLink> &FullDuplexLink::getLinks() const {
+    return links;
+}

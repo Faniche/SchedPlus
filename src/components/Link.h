@@ -11,28 +11,36 @@
 #include "Port.h"
 #include "Node.h"
 
-class Link {
+class DirectedLink {
 private:
     uuid_t id{};
-    Node *node_a;
-    Node *node_b;
-    Port port_a;
-    Port port_b;
+    Node *srcNode;
+    Node *destNode;
+    Port srcPort;
+    Port destPort;
 public:
-    Link(Node *nodeA, Node *nodeB, const Port &portA, const Port &portB);
+    DirectedLink(Node *_srcNode, Node *_destNode, const Port &_srcPort, const Port &_destPort);
 
     [[nodiscard]] const unsigned char *getId() const;
 
-    [[nodiscard]] Node *getNodeA() const;
+    [[nodiscard]] Node *getSrcNode() const;
 
-    [[nodiscard]] Node *getNodeB() const;
+    [[nodiscard]] Node *getDestNode() const;
 
-    [[nodiscard]] const Port &getPortA() const;
+    [[nodiscard]] const Port &getSrcPort() const;
 
-    [[nodiscard]] const Port &getPortB() const;
+    [[nodiscard]] const Port &getDestPort() const;
 
-    static Link * nodesIdxToLink(const Node *nodeA, const Node* nodeB, std::vector<Link> &links);
+    static DirectedLink *nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
 };
 
+class FullDuplexLink {
+private:
+    std::vector<DirectedLink> links;
+public:
+    FullDuplexLink(Node *nodeA, Node *nodeB, const Port &_portA, const Port &_portB);
+
+    [[nodiscard]] const std::vector<DirectedLink> &getLinks() const;
+};
 
 #endif //SCHEDPLUS_LINK_H
