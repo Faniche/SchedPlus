@@ -88,91 +88,18 @@ int getWholeSendInterval(const std::vector<Flow> &flows) {
     return ret;
 }
 
-void initGraph(const std::vector<Node *> &nodes,
-               const std::vector<Link> &links,
-               std::vector<std::vector<Node *>> &graph) {
-    for (auto *node: nodes) {
-        std::vector<Node *> tmp{node};
-        graph.push_back(tmp);
-    }
-    for (auto &link: links) {
-        for (auto &nodeList: graph) {
-            if (nodeList[0] == link.getNodeA())
-                nodeList.push_back(link.getNodeB());
-            if (nodeList[0] == link.getNodeB())
-                nodeList.push_back(link.getNodeA());
-        }
-    }
-}
-
-void printGraph(const std::vector<std::vector<Node *>> &graph) {
-    for (auto &nodeList: graph) {
-        std::string tmp;
-        for (auto node = nodeList.begin(); node != nodeList.end(); node++) {
-            tmp.append((*node)->getName());
-            if (node < nodeList.end() - 1)
-                tmp.append(" -> ");
-        }
-        spdlog::info(tmp);
-    }
-}
-
-void initGraph(const std::vector<Node *> &nodes,
-               const std::vector<Link> &links,
-               std::vector<std::vector<GraphNode >> &nodesAdjacencyMatrix) {
-    for (auto *node: nodes) {
-        GraphNode graphNode(node->getId(), node->getName(), NOT_VISITED);
-        std::vector<GraphNode> tmp{graphNode};
-        nodesAdjacencyMatrix.push_back(tmp);
-    }
-    for (auto &link: links) {
-        for (auto &nodeList: nodesAdjacencyMatrix) {
-            if (uuid_compare(nodeList[0].getId(), link.getNodeA()->getId()) == 0) {
-                GraphNode graphNode(link.getNodeB()->getId(), link.getNodeB()->getName(), NOT_VISITED);
-                nodeList.push_back(graphNode);
-            }
-            if (uuid_compare(nodeList[0].getId(), link.getNodeB()->getId()) == 0) {
-                GraphNode graphNode(link.getNodeA()->getId(), link.getNodeA()->getName(), NOT_VISITED);
-                nodeList.push_back(graphNode);
-            }
-        }
-    }
-}
-
-/**
- * @brief print the GraphNode type adjacency matrix
- * @param nodesAdjacencyMatrix  : GraphNode adjacency
- */
-void printGraph(const std::vector<std::vector<GraphNode>> &nodesAdjacencyMatrix) {
-    for (auto &nodeList: nodesAdjacencyMatrix) {
-        std::string tmp;
-        for (auto node = nodeList.begin(); node != nodeList.end(); node++) {
-            tmp.append((*node).getName());
-            if (node < nodeList.end() - 1)
-                tmp.append(" -> ");
-        }
-        spdlog::info(tmp);
-    }
-}
-
 /**
  * @brief Init the Integer type of graph
  * @param map       : reference to node index map
  * @param links     : link vector
  * @param graph     : integer adjacency matrix
  * */
-void initGraph(std::map<size_t, Node *> &map, const std::vector<Link> &links, Graph &graph) {
+void initGraph(std::map<size_t, Node *> &map, const std::vector<DirectedLink> &links, Graph &graph) {
     for (auto &link: links) {
         for (size_t i = 0; i < map.size(); ++i) {
-            if (uuid_compare(map[i]->getId(), link.getNodeA()->getId()) == 0) {
+            if (uuid_compare(map[i]->getId(), link.getSrcNode()->getId()) == 0) {
                 for (size_t j = 0; j < map.size(); ++j) {
-                    if (uuid_compare(map[j]->getId(), link.getNodeB()->getId()) == 0)
-                        graph.addEdge(i, j);
-                }
-            }
-            if (uuid_compare(map[i]->getId(), link.getNodeB()->getId()) == 0) {
-                for (size_t j = 0; j < map.size(); ++j) {
-                    if (uuid_compare(map[j]->getId(), link.getNodeA()->getId()) == 0)
+                    if (uuid_compare(map[j]->getId(), link.getDestNode()->getId()) == 0)
                         graph.addEdge(i, j);
                 }
             }
@@ -190,7 +117,7 @@ void initGraph(std::map<size_t, Node *> &map, const std::vector<Link> &links, Gr
 void getRoutes(std::map<size_t, Node *> &map,
                Flow &flow,
                Graph &graph,
-               std::vector<Link> &links) {
+               std::vector<DirectedLink> &links) {
     size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
     if (srcIdx == INT64_MAX)
         spdlog::error("can not find the index of node: %s", flow.getSrc()->getName());
@@ -201,12 +128,12 @@ void getRoutes(std::map<size_t, Node *> &map,
     graph.getAllRoutes(srcIdx, destIdx, routes);
     for (auto & idxRoute : routes) {
         srcIdx = idxRoute[0];
-        std::vector<Link *> route;
+        std::vector<DirectedLink *> route;
         std::vector<Node *> nodeVector;
         nodeVector.push_back(flow.getSrc());
         for (int j = 1; j < idxRoute.size(); ++j) {
             destIdx = idxRoute[j];
-            Link * link1 = Link::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), links);
+            DirectedLink * link1 = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), links);
             nodeVector.push_back(map[destIdx]);
             srcIdx = destIdx;
             route.push_back(link1);
