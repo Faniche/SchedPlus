@@ -14,8 +14,8 @@
 #include <random>
 #include <spdlog/spdlog.h>
 #include <queue>
-#include "lib/components/Flow.h"
-#include "lib/Route.h"
+#include "components/Flow.h"
+#include "Route.h"
 
 //#define MIN_FRAME_LEN 64
 //
