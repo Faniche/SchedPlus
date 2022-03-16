@@ -44,7 +44,7 @@ private:
     /* the Flow is multicast or not */
     bool multicast = false;
 
-    std::vector<std::vector<Link *>> routes;
+    std::vector<std::vector<DirectedLink *>> routes;
 
     std::vector<std::vector<Node *>> routesAdj;
 
@@ -87,9 +87,9 @@ public:
 
     [[nodiscard]] bool isMulticast() const;
 
-    [[nodiscard]] const std::vector<std::vector<Link *>> &getRoutes() const;
+    [[nodiscard]] const std::vector<std::vector<DirectedLink *>> &getRoutes() const;
 
-    void setRoutes(const std::vector<Link *>& route);
+    void setRoutes(const std::vector<DirectedLink *>& route);
 
     [[nodiscard]] const std::vector<std::vector<Node *>> &getRoutesAdj() const;
 

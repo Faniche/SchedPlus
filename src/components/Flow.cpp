@@ -73,11 +73,11 @@ bool Flow::isMulticast() const {
     return multicast;
 }
 
-const std::vector<std::vector<Link *>> &Flow::getRoutes() const {
+const std::vector<std::vector<DirectedLink *>> &Flow::getRoutes() const {
     return routes;
 }
 
-void Flow::setRoutes(const std::vector<Link *> &route) {
+void Flow::setRoutes(const std::vector<DirectedLink *> &route) {
     routes.push_back(route);
 }
 
@@ -95,8 +95,8 @@ std::string Flow::toString(std::ostringstream &oss) {
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
     oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
-    oss << "\t" << R"("src": ")" << src->getName() << "," << std::endl;
-    oss << "\t" << R"("dest": ")" << dest->getName() << "," << std::endl;
+    oss << "\t" << R"("srcNode": ")" << src->getName() << "," << std::endl;
+    oss << "\t" << R"("destNode": ")" << dest->getName() << "," << std::endl;
     oss << "\t" << R"("isCritical": )" << std::boolalpha << isCritical << "," << std::endl;
     oss << "\t" << R"("rep": )" << rep << "," << std::endl;
     oss << "\t" << R"("multicast": )" << std::boolalpha << multicast;
