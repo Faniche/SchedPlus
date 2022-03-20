@@ -9,7 +9,7 @@
 #include <uuid/uuid.h>
 #include "NodeImpl.h"
 #include "Link.h"
-#include "MyVlan.h"
+#include "../include/MyVlan.h"
 
 class Flow {
 private:
@@ -45,8 +45,6 @@ private:
     bool multicast = false;
 
     std::vector<std::vector<DirectedLink *>> routes;
-
-    std::vector<std::vector<Node *>> routesAdj;
 
 public:
     /**
@@ -90,10 +88,6 @@ public:
     [[nodiscard]] const std::vector<std::vector<DirectedLink *>> &getRoutes() const;
 
     void setRoutes(const std::vector<DirectedLink *>& route);
-
-    [[nodiscard]] const std::vector<std::vector<Node *>> &getRoutesAdj() const;
-
-    void setRoutesAdj(const std::vector<Node *> &nodeVector);
 
     std::string toString(std::ostringstream &oss);
 };

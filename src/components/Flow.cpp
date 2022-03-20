@@ -81,14 +81,6 @@ void Flow::setRoutes(const std::vector<DirectedLink *> &route) {
     routes.push_back(route);
 }
 
-const std::vector<std::vector<Node *>> &Flow::getRoutesAdj() const {
-    return routesAdj;
-}
-
-void Flow::setRoutesAdj(const std::vector<Node *> &nodeVector) {
-    routesAdj.push_back(nodeVector);
-}
-
 std::string Flow::toString(std::ostringstream &oss) {
     oss << "{\n";
     oss << "\t" << R"("id": ")" << id << "\"," << std::endl;
@@ -105,18 +97,16 @@ std::string Flow::toString(std::ostringstream &oss) {
     } else {
         oss << "," << std::endl;
         oss << "\t" << R"("routes": {)";
-        for (size_t i = 0; i < routesAdj.size(); ++i) {
-            oss << std::endl << "\t\t\"route" << i << "\": \"" << routesAdj[i][0]->getName();
-            for (size_t j = 1; j < routesAdj[i].size(); ++j) {
-                oss << " -> " << routesAdj[i][j]->getName();
+        for (size_t i = 0; i < routes.size(); ++i) {
+            oss << std::endl << "\t\t\"route" << i << "\": \"" << routes[i][0]->getSrcNode()->getName();
+            for (auto & j : routes[i]) {
+                oss << " -> " << j->getDestNode()->getName();
             }
             oss << "\",";
         }
         oss.seekp(-1, std::ios_base::end);
-
-
         oss << std::endl << "\t" << "}" << std::endl;
     }
-    oss << "}" << std::endl;
+    oss << "}";
     return oss.str();
 }
