@@ -9,7 +9,8 @@
 /* Definition of Priority Code Point for vlan frame
  * https://en.wikipedia.org/wiki/IEEE_P802.1p
  **/
-enum PRIORITY_CODE_POINT {
+typedef int PRIORITY_CODE_POINT;
+enum {
     BK,     // 0 (lowest)       Background
     BE,     // 1 (default)      Best effort
     EE,     // 2                Excellent effort
