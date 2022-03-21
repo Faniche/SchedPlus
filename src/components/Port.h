@@ -7,6 +7,24 @@
 
 
 #include <uuid/uuid.h>
+#include <vector>
+
+class GateControlEntry {
+private:
+    std::vector<bool> gateStatesValue;
+    u_int64_t timeIntervalValue;
+public:
+    GateControlEntry();
+
+    [[nodiscard]] const std::vector<bool> &getGateStatesValue() const;
+
+    void setGateStatesValue(int idx, bool gateState);
+
+    [[nodiscard]] u_int64_t getTimeIntervalValue() const;
+
+    void setTimeIntervalValue(u_int64_t timeIntervalValue);
+};
+
 
 class Port {
 private:
@@ -20,6 +38,11 @@ private:
 
     /* sending 64 bytes shall spend 512 ns with Gigabit full duplex ethernet */
     int macrotick = 512;
+
+    std::vector<GateControlEntry> gateControlList;
+
+
+
 public:
     Port();
 
@@ -38,6 +61,10 @@ public:
     [[nodiscard]] int getMacrotick() const;
 
     void setMacrotick(int macrotick);
+
+    [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
+
+    void addGateControlEntry(const GateControlEntry &gateControlEntry);
 };
 
 
