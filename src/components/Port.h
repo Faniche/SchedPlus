@@ -9,9 +9,13 @@
 #include <uuid/uuid.h>
 #include <vector>
 
+typedef bool GATE_EVENT;
+#define GATE_CLOSE  false;
+#define GATE_OPEN   true;
+
 class GateControlEntry {
 private:
-    std::vector<bool> gateStatesValue;
+    std::vector<GATE_EVENT> gateStatesValue;
     u_int64_t timeIntervalValue;
 public:
     GateControlEntry();
@@ -30,41 +34,46 @@ class Port {
 private:
     uuid_t id{};
 
-    /* the Gigabit link could hold 125000000 bytes per second */
-    int speed = 125000000;
+    /* speed of port, default: 1Gbps */
+    int speed = 1000000000;
 
-    /* the number of available queues for a port */
-    int availableQueues = 6;
-
-    /* sending 64 bytes shall spend 512 ns with Gigabit full duplex ethernet */
-    int macrotick = 512;
+    /* sending 1 byte shall spend 8 ns with Gigabit full duplex ethernet */
+    int macrotick = 8;
 
     std::vector<GateControlEntry> gateControlList;
 
+    /* the bytes of cached frame in queue with priority 5 and 6 */
+    int qsize = 0;
 
+    /* the num of cached frame in queue with priority 5 and 6 */
+    int qlen = 0;
+
+    std::vector<int> frameQueue;
 
 public:
     Port();
 
-    Port(int speed, int availableQueues, int macrotick);
+    explicit Port(int speed);
 
     [[nodiscard]] const unsigned char *getId() const;
 
-    [[nodiscard]] int getSpeed() const;
-
-    void setSpeed(int speed);
-
-    [[nodiscard]] int getAvailableQueues() const;
-
-    void setAvailableQueues(int availableQueues);
-
     [[nodiscard]] int getMacrotick() const;
-
-    void setMacrotick(int macrotick);
 
     [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
 
     void addGateControlEntry(const GateControlEntry &gateControlEntry);
+
+    [[nodiscard]] int getQsize() const;
+
+    void setQsize(int qsize);
+
+    [[nodiscard]] int getQlen() const;
+
+    void setQlen(int qlen);
+
+    [[nodiscard]] const std::vector<int> &getFrameQueue() const;
+
+    void setFrameQueue(const std::vector<int> &frameQueue);
 };
 
 
