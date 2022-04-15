@@ -19,9 +19,11 @@ protected:
     uuid_t id{};
     std::string name;
     NODE_TYPE nodeType;
+    /* the process delay of node */
+    int dpr;
 
 public:
-    Node(std::string name, NODE_TYPE _nodeType);
+    Node(std::string name, NODE_TYPE _nodeType, int _dpr);
 
     virtual ~Node();
 
@@ -38,6 +40,6 @@ public:
     static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
 };
 
-Node *createNode(NODE_TYPE nodeType, const std::string& name);
+Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr);
 
 #endif //SCHEDPLUS_NODE_H

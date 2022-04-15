@@ -6,7 +6,7 @@
 
 #include <utility>
 
-EndSystem::EndSystem(std::string name): Node(std::move(name), END_SYSTEM) {
+EndSystem::EndSystem(std::string name, int dpr): Node(std::move(name), END_SYSTEM, dpr) {
     Port _port;
     this->port = _port;
 }
@@ -23,14 +23,14 @@ std::string &EndSystem::toString() {
     return this->name;
 }
 
-Switch::Switch(std::string name): Node(std::move(name), SWITCH) {
+Switch::Switch(std::string name, int dpr): Node(std::move(name), SWITCH, dpr) {
     for (int i = 0; i < portNum; ++i) {
         Port port;
         ports.push_back(port);
     }
 }
 
-Switch::Switch(std::string name, int portNum) : Node(std::move(name), SWITCH), portNum(portNum) {
+Switch::Switch(std::string name, int dpr, int portNum) : Node(std::move(name), SWITCH, dpr), portNum(portNum) {
     for (int i = 0; i < portNum; ++i) {
         Port port;
         ports.push_back(port);

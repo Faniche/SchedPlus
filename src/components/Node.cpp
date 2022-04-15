@@ -7,10 +7,11 @@
 #include "Node.h"
 #include "NodeImpl.h"
 
-Node::Node(std::string _name, NODE_TYPE _nodeType) {
+Node::Node(std::string _name, NODE_TYPE _nodeType, int _dpr) {
     uuid_generate(this->id);
     this->name = std::move(_name);
     this->nodeType = _nodeType;
+    this->dpr = _dpr;
 }
 
 Node::~Node() = default;
@@ -40,14 +41,14 @@ size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
     return INT64_MAX;
 }
 
-Node *createNode(NODE_TYPE nodeType, const std::string& name){
+Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr){
     Node *node;
     switch (nodeType) {
         case END_SYSTEM:
-            node = new EndSystem(name);
+            node = new EndSystem(name, dpr);
             break;
         case SWITCH:
-            node = new Switch(name);
+            node = new Switch(name, dpr);
             break;
         default:
             std::cout << "wrong components type" << std::endl;
