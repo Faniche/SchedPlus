@@ -5,7 +5,7 @@
 #include "Port.h"
 
 GateControlEntry::GateControlEntry() {
-    std::vector<bool> tmp(8, false);
+    std::vector<bool> tmp(8, GATE_CLOSE);
     gateStatesValue = tmp;
     timeIntervalValue = 0;
 }
@@ -15,8 +15,16 @@ const std::vector<bool> &GateControlEntry::getGateStatesValue() const {
     return gateStatesValue;
 }
 
-void GateControlEntry::setGateStatesValue(int idx, bool gateState) {
+void GateControlEntry::setGateStatesValue(int idx, GATE_EVENT gateState) {
     gateStatesValue.at(gateState);
+}
+
+u_int64_t GateControlEntry::getStartTime() const {
+    return startTime;
+}
+
+void GateControlEntry::setStartTime(u_int64_t _startTime) {
+    GateControlEntry::startTime = _startTime;
 }
 
 u_int64_t GateControlEntry::getTimeIntervalValue() const {
@@ -43,6 +51,10 @@ Port::Port(int _speed) : speed(_speed) {
 
 const unsigned char *Port::getId() const {
     return id;
+}
+
+int Port::getSpeed() const {
+    return speed;
 }
 
 int Port::getMacrotick() const {
@@ -77,6 +89,6 @@ const std::vector<int> &Port::getFrameQueue() const {
     return frameQueue;
 }
 
-void Port::setFrameQueue(const std::vector<int> &frameQueue) {
-    Port::frameQueue = frameQueue;
+void Port::setFrameQueue(const std::vector<int> &_frameQueue) {
+    Port::frameQueue = _frameQueue;
 }

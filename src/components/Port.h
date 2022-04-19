@@ -10,19 +10,25 @@
 #include <vector>
 
 typedef bool GATE_EVENT;
-#define GATE_CLOSE  false;
-#define GATE_OPEN   true;
+#define GATE_CLOSE  false
+#define GATE_OPEN   true
 
 class GateControlEntry {
 private:
     std::vector<GATE_EVENT> gateStatesValue;
+    u_int64_t startTime;
     u_int64_t timeIntervalValue;
+
 public:
     GateControlEntry();
 
     [[nodiscard]] const std::vector<bool> &getGateStatesValue() const;
 
-    void setGateStatesValue(int idx, bool gateState);
+    void setGateStatesValue(int idx, GATE_EVENT gateState);
+
+    u_int64_t getStartTime() const;
+
+    void setStartTime(u_int64_t startTime);
 
     [[nodiscard]] u_int64_t getTimeIntervalValue() const;
 
@@ -56,6 +62,8 @@ public:
     explicit Port(int speed);
 
     [[nodiscard]] const unsigned char *getId() const;
+
+    [[nodiscard]] int getSpeed() const;
 
     [[nodiscard]] int getMacrotick() const;
 
