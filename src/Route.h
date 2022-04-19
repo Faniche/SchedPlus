@@ -34,11 +34,28 @@ public:
 };
 
 class Route {
+private:
+    /* The set of links of a Route. */
+    std::vector<DirectedLink*> links;
+
+    /* End to end latency except queue delay */
+    int e2e = 0;
+
 public:
-    static void getRoutes(std::map<size_t, Node *> &map,
-                   Flow &flow,
-                   Graph &graph,
-                   std::vector<DirectedLink> &links);
+    explicit Route();
+
+    const std::vector<DirectedLink *> &getLinks() const;
+
+    void setLinks(const std::vector<DirectedLink *> &links);
+
+    int getE2E() const;
+
+    void setE2E(int e2E);
+
+    static void calAllRoutes(std::map<size_t, Node *> &map,
+                             Flow &flow,
+                             Graph &graph,
+                             std::vector<DirectedLink> &alllinks);
 };
 
 
