@@ -41,6 +41,14 @@ size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
     return INT64_MAX;
 }
 
+int Node::getDpr() const {
+    return dpr;
+}
+
+void Node::setDpr(int _dpr) {
+    Node::dpr = _dpr;
+}
+
 Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr){
     Node *node;
     switch (nodeType) {

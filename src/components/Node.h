@@ -38,6 +38,10 @@ public:
     virtual std::string& toString() = 0;
 
     static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
+
+    int getDpr() const;
+
+    void setDpr(int dpr);
 };
 
 Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr);
