@@ -18,8 +18,16 @@ private:
     Node *destNode;
     Port srcPort;
     Port destPort;
+    int speed = 1000000000;
+    /* the length of link */
+    int len = 20;
+    /* the signal propagation speed of the media, val: nanosecond per meter */
+    int propSpeed = 5;
 public:
-    DirectedLink(Node *_srcNode, Node *_destNode, const Port &_srcPort, const Port &_destPort);
+
+    DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort);
+
+    DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort, int _len, int _propSpeed);
 
     [[nodiscard]] const unsigned char *getId() const;
 
@@ -29,7 +37,19 @@ public:
 
     [[nodiscard]] const Port &getSrcPort() const;
 
+    void addGateControlEntry(const GateControlEntry &gateControlEntry);
+
     [[nodiscard]] const Port &getDestPort() const;
+
+    [[nodiscard]] int getSpeed() const;
+
+    [[nodiscard]] int getLen() const;
+
+    void setLen(int len);
+
+    [[nodiscard]] int getPropSpeed() const;
+
+    void setPropSpeed(int propSpeed);
 
     static DirectedLink *nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
 };

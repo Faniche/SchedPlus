@@ -3,10 +3,31 @@
 //
 
 #include <spdlog/spdlog.h>
+
+#include <utility>
 #include "Link.h"
 
-DirectedLink::DirectedLink(Node *_srcNode, Node *_destNode, const Port &_srcPort, const Port &_destPort) : srcNode(_srcNode), destNode(_destNode),
-                                                                                                           srcPort(_srcPort), destPort(_destPort) {
+DirectedLink::DirectedLink(Node *_srcNode,
+                           Node *_destNode,
+                           Port _srcPort,
+                           Port _destPort) : srcNode(_srcNode),
+                                            destNode(_destNode),
+                                            srcPort(std::move(_srcPort)),
+                                            destPort(std::move(_destPort)) {
+    uuid_generate(id);
+}
+
+DirectedLink::DirectedLink(Node *_srcNode,
+                           Node *_destNode,
+                           Port _srcPort,
+                           Port _destPort,
+                           int _len,
+                           int _propSpeed) : srcNode(_srcNode),
+                                             destNode(_destNode),
+                                             srcPort(std::move(_srcPort)),
+                                             destPort(std::move(_destPort)),
+                                             len(_len),
+                                             propSpeed(_propSpeed){
     uuid_generate(id);
 }
 
@@ -26,22 +47,47 @@ const Port &DirectedLink::getSrcPort() const {
     return srcPort;
 }
 
+void DirectedLink::addGateControlEntry(const GateControlEntry &gateControlEntry) {
+    this->srcPort.addGateControlEntry(gateControlEntry);
+}
+
 const Port &DirectedLink::getDestPort() const {
     return destPort;
 }
 
-DirectedLink *DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links) {
+DirectedLink *
+DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links) {
     spdlog::set_level(spdlog::level::info);
     spdlog::debug("_srcNode: %v, _destNode: %v", _srcNode->getName(), _destNode->getName());
     for (size_t i = 0; i < links.size(); ++i) {
         spdlog::debug("comparing link: {}", i);
         if (uuid_compare(links[i].getSrcNode()->getId(), _srcNode->getId()) == 0
-             && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
-            spdlog::debug("link mem address: {}", (void *)&links[i]);
+            && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
+            spdlog::debug("link mem address: {}", (void *) &links[i]);
             return &links[i];
         }
     }
     return nullptr;
+}
+
+int DirectedLink::getSpeed() const {
+    return speed;
+}
+
+int DirectedLink::getLen() const {
+    return len;
+}
+
+void DirectedLink::setLen(int _len) {
+    DirectedLink::len = _len;
+}
+
+int DirectedLink::getPropSpeed() const {
+    return propSpeed;
+}
+
+void DirectedLink::setPropSpeed(int _propSpeed) {
+    DirectedLink::propSpeed = _propSpeed;
 }
 
 FullDuplexLink::FullDuplexLink(Node *nodeA, Node *nodeB, const Port &_portA, const Port &_portB) {
