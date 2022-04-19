@@ -10,6 +10,7 @@
 #include "NodeImpl.h"
 #include "Link.h"
 #include "../include/MyVlan.h"
+#include "../Route.h"
 
 class Flow {
 private:
@@ -23,6 +24,10 @@ private:
 
     /* The deadline of arrival of frames */
     int deadline = 0;
+
+    int e2e = 0;
+
+    int queueDelay = 0;
 
     /* The frame length include network headers of a packet of each frame */
     int frameLength = 0;
@@ -44,20 +49,18 @@ private:
     /* the Flow is multicast or not */
     bool multicast = false;
 
-    std::vector<std::vector<DirectedLink *>> routes;
+    std::vector<Route> routes;
+
+//    std::vector<std::vector<DirectedLink *>> routes;
+
+    int selectedRouteInx = 0;
+
+    uint64_t hyperperiod = 0;
+
+    static const std::vector<int> randPeriod;
 
 public:
-    /**
-     * @param period        Period of frame
-     * @param deadline      deadline of frame
-     * @param frameLength   Frame of length
-     * @param src           Source of the flow
-     * @param dest          Destination of the flow
-     * @param isCritical    The flow is time sensitive or not
-     * @param rep           The replication of the frame, default 1
-     * @param multicast     The flow is multicast of not
-     */
-    Flow(int period, int deadline, int frameLength, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
+    Flow(int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
 
     [[nodiscard]] const unsigned char *getId() const;
 
@@ -69,11 +72,21 @@ public:
 
     [[nodiscard]] int getDeadline() const;
 
+    void setDeadline(int deadline);
+
+    [[nodiscard]] int getE2E() const;
+
+    void setE2E(int e2e);
+
+    int getQueueDelay() const;
+
+    void setQueueDelay(int queueDelay);
+
     [[nodiscard]] int getFrameLength() const;
 
-    [[nodiscard]] PRIORITY_CODE_POINT getPriorityCodePoint() const;
+    void setFrameLength(int frameLength);
 
-    void setPriorityCodePoint(PRIORITY_CODE_POINT priorityCodePoint);
+    [[nodiscard]] PRIORITY_CODE_POINT getPriorityCodePoint() const;
 
     [[nodiscard]] Node *getSrc() const;
 
@@ -85,11 +98,26 @@ public:
 
     [[nodiscard]] bool isMulticast() const;
 
-    [[nodiscard]] const std::vector<std::vector<DirectedLink *>> &getRoutes() const;
+    const std::vector<Route> &getRoutes() const;
 
-    void setRoutes(const std::vector<DirectedLink *>& route);
+    void addRoutes(const Route &_route);
+
+    [[nodiscard]] int getSelectedRouteInx() const;
+
+    void setSelectedRouteInx(int selectedRouteInx);
 
     std::string toString(std::ostringstream &oss);
+
+    uint64_t getHyperperiod() const;
+
+    void addGateControlEntry();
+
+    void setHyperperiod(uint64_t hyperperiod);
+
+    static int getRandomPeriod(PRIORITY_CODE_POINT pcp);
+
+    static int getRandomFrameLength(PRIORITY_CODE_POINT pcp);
+
 };
 
 
