@@ -16,7 +16,7 @@
 
 class Flow {
 private:
-    uuid_t id{};
+    uint64_t id;
 
     /* The sending offset in a hyperperiod of each frame */
     int offset = 0;
@@ -60,9 +60,9 @@ private:
     static const std::vector<int> randPeriod;
 
 public:
-    Flow(int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
+    Flow(uint64_t _id, int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
 
-    [[nodiscard]] const unsigned char *getId() const;
+    [[nodiscard]] uint64_t getId() const;
 
     [[nodiscard]] int getOffset() const;
 

@@ -91,7 +91,7 @@ static void openGACal() {
         while (a == b)
             b = util.getRandESIdx(esList);
         PRIORITY_CODE_POINT pcp = util.getRandPCP();
-        Flow flow(Flow::getRandomPeriod(pcp), pcp, nodeMap.at(a), nodeMap.at(b), false, 1, false);
+        Flow flow(i, Flow::getRandomPeriod(pcp), pcp, nodeMap.at(a), nodeMap.at(b), false, 1, false);
         if (pcp == P6) {
             DeliveryGuarantee deliveryGuarantee(DDL, flow.getPeriod());
             flow.addDeliveryGuarantee(deliveryGuarantee);

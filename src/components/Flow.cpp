@@ -20,20 +20,20 @@ const std::vector<int> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18,
  * @param rep                   The replication of the frame, default 1
  * @param multicast             The flow is multicast of not
  */
-Flow::Flow(int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
+Flow::Flow(uint64_t _id, int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
            bool isCritical, int rep, bool multicast)
-        : period(period),
+        : id(_id),
+          period(period),
           priorityCodePoint(priorityCodePoint),
           src(src),
           dest(dest),
           isCritical(isCritical),
           rep(rep),
           multicast(multicast) {
-    uuid_generate(id);
     DeliveryGuarantee deliveryGuarantee(E2E, 0);
 }
 
-const unsigned char *Flow::getId() const {
+uint64_t Flow::getId() const {
     return id;
 }
 
@@ -58,8 +58,8 @@ void Flow::addDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
 }
 
 void Flow::setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
-    for (auto & i : deliveryGuarantees) {
-        if (i.getType() == deliveryGuarantee.getType()){
+    for (auto &i: deliveryGuarantees) {
+        if (i.getType() == deliveryGuarantee.getType()) {
             i.setLowerVal(deliveryGuarantee.getLoverObj());
             i.setUpperVal(deliveryGuarantee.getUpperVal());
             i.setLoverObj(deliveryGuarantee.getLoverObj());
@@ -72,10 +72,10 @@ void Flow::setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
  * @brief After set offset and route index, set guarantee.
  * */
 void Flow::setDeliveryGuarantee() {
-    for (auto & deliveryGuarantee: deliveryGuarantees) {
+    for (auto &deliveryGuarantee: deliveryGuarantees) {
         if (deliveryGuarantee.getType() == DDL) {
             deliveryGuarantee.setLoverObj(offset + routes.at(selectedRouteInx).getE2E());
-        } else if(deliveryGuarantee.getType() == E2E) {
+        } else if (deliveryGuarantee.getType() == E2E) {
             deliveryGuarantee.setLoverObj(queueDelay + routes.at(selectedRouteInx).getE2E());
         }
     }
@@ -140,11 +140,7 @@ void Flow::setSelectedRouteInx(int _selectedRouteInx) {
 
 std::string Flow::toString(std::ostringstream &oss) {
     oss << "{\n";
-    oss << "\t" << R"("id": ")";
-    for (unsigned char i: id) {
-        oss << i;
-    }
-    oss << "\"," << std::endl;
+    oss << "\t" << R"("id": ")" << id << "," << std::endl;
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
 //    oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
@@ -198,7 +194,9 @@ bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
             proc_delay = link.get().getSrcNode()->getDpr();
             trans_delay = this->frameLength * link.get().getSrcPort().getMacrotick();
             accumulatedDelay += proc_delay;
-            /* Add gate control entity for every frame of flow in a hyperperiod */
+            /* Add gate control entity for every frame of flow in a hycperperiod */
+            spdlog::set_level(spdlog::level::info);
+            spdlog::debug("hyperperiod: {}, send {} times.", hyperperiod, hyperperiod / period);
             for (int i = 0; i < hyperperiod / frameLength; ++i) {
                 accumulatedDelay += offset + i * period;
                 GateControlEntry gateControlEntry;
@@ -293,3 +291,4 @@ int Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
     a = a - a % 10;
     return a;
 }
+
