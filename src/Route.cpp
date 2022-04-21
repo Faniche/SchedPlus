@@ -78,12 +78,12 @@ void Graph::initGraph(std::map<size_t, Node *> &map, const std::vector<DirectedL
 
 Route::Route() {}
 
-const std::vector<DirectedLink *> &Route::getLinks() const {
-    return links;
-}
+//const std::vector<DirectedLink *> &Route::getLinks() const {
+//    return links;
+//}
 
-void Route::setLinks(const std::vector<DirectedLink *> &_links) {
-    Route::links = _links;
+const std::vector<std::reference_wrapper<DirectedLink>> &Route::getLinks() const {
+    return links;
 }
 
 int Route::getE2E() const {
@@ -94,39 +94,6 @@ void Route::setE2E(int e2E) {
     e2e = e2E;
 }
 
-/**
- * @brief Get all routes of flow
- * @param map   : node index map
- * @param flow  : flow waiting for calculation all routes
- * @param graph : Integer adjacency matrix of all node
- * @param alllinks : all alllinks vector
- **/
-void Route::calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
-    size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
-    if (srcIdx == INT64_MAX)
-        spdlog::error("can not find the index of node: %s", flow.getSrc()->getName());
-    size_t destIdx = Node::nodeToIdx(map, flow.getDest());
-    if (destIdx == INT64_MAX)
-        spdlog::error("can not find the index of node: %s", flow.getDest()->getName());
-    std::vector<std::vector<size_t>> routes;
-    graph.getAllRoutes(srcIdx, destIdx, routes);
-    for (auto &idxRoute: routes) {
-        srcIdx = idxRoute[0];
-        Route route;
-        int tmp = 0;
-        for (int j = 1; j < idxRoute.size(); ++j) {
-            destIdx = idxRoute[j];
-            DirectedLink *link1 = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
-            srcIdx = destIdx;
-            route.links.push_back(link1);
-            /* Calculate the e2e latency except queue delay of flow. */
-            int trans_delay = flow.getFrameLength() * link1->getSrcPort().getMacrotick();
-            int proc_delay = link1->getSrcNode()->getDpr();
-            int prop_delay = link1->getLen() * link1->getPropSpeed();
-            tmp += trans_delay + proc_delay + prop_delay;
-        }
-        route.setE2E(tmp);
-        flow.addRoutes(route);
-    }
-
+void Route::addLink(DirectedLink &link) {
+    links.emplace_back(link);
 }

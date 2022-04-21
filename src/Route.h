@@ -8,7 +8,7 @@
 #include <vector>
 #include <sstream>
 #include "components/Node.h"
-#include "components/Flow.h"
+#include "components/Link.h"
 
 /*
  * https://www.geeksforgeeks.org/find-paths-given-source-destination/
@@ -22,7 +22,8 @@ private:
     std::vector<std::vector<size_t>> adj; // Pointer to an array containing adjacency lists
 
     // A recursive function used by getAllRoutes()
-    void printAllPathsUtil(size_t, size_t, std::vector<bool>&, std::vector<size_t>&, size_t &, std::vector<std::vector<size_t>> &routes);
+    void printAllPathsUtil(size_t, size_t, std::vector<bool> &, std::vector<size_t> &, size_t &,
+                           std::vector<std::vector<size_t>> &routes);
 
 public:
     explicit Graph(size_t V); // Constructor
@@ -36,7 +37,8 @@ public:
 class Route {
 private:
     /* The set of links of a Route. */
-    std::vector<DirectedLink*> links;
+//    std::vector<DirectedLink *> links;
+    std::vector<std::reference_wrapper<DirectedLink>> links;
 
     /* End to end latency except queue delay */
     int e2e = 0;
@@ -44,18 +46,15 @@ private:
 public:
     explicit Route();
 
-    const std::vector<DirectedLink *> &getLinks() const;
+//    [[nodiscard]] const std::vector<DirectedLink *> &getLinks() const;
 
-    void setLinks(const std::vector<DirectedLink *> &links);
+    [[nodiscard]] const std::vector<std::reference_wrapper<DirectedLink>> &getLinks() const;
 
-    int getE2E() const;
+    void addLink(DirectedLink &link);
+
+    [[nodiscard]] int getE2E() const;
 
     void setE2E(int e2E);
-
-    static void calAllRoutes(std::map<size_t, Node *> &map,
-                             Flow &flow,
-                             Graph &graph,
-                             std::vector<DirectedLink> &alllinks);
 };
 
 
