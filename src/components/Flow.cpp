@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include "Flow.h"
 #include "Link.h"
+#include "../Delivery/DeliveryGuarantee.h"
 
 const std::vector<int> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18, 20};
 
@@ -29,6 +30,7 @@ Flow::Flow(int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *d
           rep(rep),
           multicast(multicast) {
     uuid_generate(id);
+    DeliveryGuarantee deliveryGuarantee(E2E, 0);
 }
 
 const unsigned char *Flow::getId() const {
@@ -47,20 +49,36 @@ int Flow::getPeriod() const {
     return period;
 }
 
-int Flow::getDeadline() const {
-    return deadline;
+const std::vector<DeliveryGuarantee> &Flow::getDeliveryGuarantees() const {
+    return deliveryGuarantees;
 }
 
-void Flow::setDeadline(int _deadline) {
-    Flow::deadline = _deadline;
+void Flow::addDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
+    this->deliveryGuarantees.push_back(deliveryGuarantee);
 }
 
-int Flow::getE2E() const {
-    return e2e;
+void Flow::setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
+    for (auto & i : deliveryGuarantees) {
+        if (i.getType() == deliveryGuarantee.getType()){
+            i.setLowerVal(deliveryGuarantee.getLoverObj());
+            i.setUpperVal(deliveryGuarantee.getUpperVal());
+            i.setLoverObj(deliveryGuarantee.getLoverObj());
+            i.setUpperObj(deliveryGuarantee.getUpperObj());
+        }
+    }
 }
 
-void Flow::setE2E(int _e2e) {
-    e2e = _e2e;
+/**
+ * @brief After set offset and route index, set guarantee.
+ * */
+void Flow::setDeliveryGuarantee() {
+    for (auto & deliveryGuarantee: deliveryGuarantees) {
+        if (deliveryGuarantee.getType() == DDL) {
+            deliveryGuarantee.setLoverObj(offset + routes.at(selectedRouteInx).getE2E());
+        } else if(deliveryGuarantee.getType() == E2E) {
+            deliveryGuarantee.setLoverObj(queueDelay + routes.at(selectedRouteInx).getE2E());
+        }
+    }
 }
 
 int Flow::getQueueDelay() const {
@@ -129,7 +147,7 @@ std::string Flow::toString(std::ostringstream &oss) {
     oss << "\"," << std::endl;
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
-    oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
+//    oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
     oss << "\t" << R"("length": )" << frameLength << "," << std::endl;
     oss << "\t" << R"("priorityCodePoint": )" << priorityCodePoint << "," << std::endl;
     oss << "\t" << R"("srcNode": ")" << src->getName() << "," << std::endl;
@@ -143,9 +161,9 @@ std::string Flow::toString(std::ostringstream &oss) {
         oss << "," << std::endl;
         oss << "\t" << R"("routes": {)";
         for (size_t i = 0; i < routes.size(); ++i) {
-            oss << std::endl << "\t\t\"route" << i << "\": \"" << routes[i].getLinks()[0]->getSrcNode()->getName();
+            oss << std::endl << "\t\t\"route" << i << "\": \"" << routes[i].getLinks()[0].get().getSrcNode()->getName();
             for (auto &j: routes[i].getLinks()) {
-                oss << " -> " << j->getDestNode()->getName();
+                oss << " -> " << j.get().getDestNode()->getName();
             }
             oss << "\",";
         }
@@ -164,13 +182,21 @@ void Flow::setHyperperiod(uint64_t _hyperperiod) {
     Flow::hyperperiod = _hyperperiod;
 }
 
-void Flow::addGateControlEntry() {
-    if (this->priorityCodePoint == P6) {
+/**
+ * @brief Calculate gate control list for every flows and check collision, the GCL is sorted by start time.
+ * @return if the GCL has collision or not.
+ * @retval  true:    GCL has no collision
+ * @retval  false:   GCL has collision
+ * */
+bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
+    bool ret = true;
+    if (this->priorityCodePoint == P5 || this->priorityCodePoint == P6) {
         int accumulatedDelay = this->offset;
         int prop_delay = 0, trans_delay = 0, proc_delay = 0;
         for (auto &link: routes.at(this->selectedRouteInx).getLinks()) {
-            proc_delay = link->getSrcNode()->getDpr();
-            trans_delay = this->frameLength * link->getSrcPort().getMacrotick();
+            /* Add gate control entity. */
+            proc_delay = link.get().getSrcNode()->getDpr();
+            trans_delay = this->frameLength * link.get().getSrcPort().getMacrotick();
             accumulatedDelay += proc_delay;
             /* Add gate control entity for every frame of flow in a hyperperiod */
             for (int i = 0; i < hyperperiod / frameLength; ++i) {
@@ -179,13 +205,18 @@ void Flow::addGateControlEntry() {
                 gateControlEntry.setGateStatesValue(P6, GATE_OPEN);
                 gateControlEntry.setStartTime(accumulatedDelay);
                 gateControlEntry.setTimeIntervalValue(trans_delay);
-                link->addGateControlEntry(gateControlEntry);
+                link.get().addGateControlEntry(gateControlEntry, gcl_lock);
             }
             accumulatedDelay += trans_delay;
-            prop_delay = link->getLen() * link->getPropSpeed();
+            prop_delay = link.get().getLen() * link.get().getPropSpeed();
             accumulatedDelay += prop_delay;
+            /* Sort the GCL of link */
+            link.get().sortGCL(gcl_lock);
+            /* Check collision */
+            ret = link.get().checkGCLCollision();
         }
     }
+    return ret;
 }
 
 /**

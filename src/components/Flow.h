@@ -7,10 +7,12 @@
 
 
 #include <uuid/uuid.h>
+#include <mutex>
 #include "NodeImpl.h"
 #include "Link.h"
 #include "../include/MyVlan.h"
 #include "../Route.h"
+#include "../Delivery/DeliveryGuarantee.h"
 
 class Flow {
 private:
@@ -22,17 +24,15 @@ private:
     /* The interval between two frames of a Flow */
     int period = 0;
 
-    /* The deadline of arrival of frames */
-    int deadline = 0;
-
-    int e2e = 0;
-
     int queueDelay = 0;
 
     /* The frame length include network headers of a packet of each frame */
     int frameLength = 0;
 
     PRIORITY_CODE_POINT priorityCodePoint;
+
+    /* The delivery guarantee */
+    std::vector<DeliveryGuarantee> deliveryGuarantees;
 
     /* The source node of a Flow */
     Node *src;
@@ -70,15 +70,15 @@ public:
 
     [[nodiscard]] int getPeriod() const;
 
-    [[nodiscard]] int getDeadline() const;
+    [[nodiscard]] const std::vector<DeliveryGuarantee> &getDeliveryGuarantees() const;
 
-    void setDeadline(int deadline);
+    void addDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee);
 
-    [[nodiscard]] int getE2E() const;
+    void setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee);
 
-    void setE2E(int e2e);
+    void setDeliveryGuarantee();
 
-    int getQueueDelay() const;
+    [[nodiscard]] int getQueueDelay() const;
 
     void setQueueDelay(int queueDelay);
 
@@ -98,7 +98,7 @@ public:
 
     [[nodiscard]] bool isMulticast() const;
 
-    const std::vector<Route> &getRoutes() const;
+    [[nodiscard]] const std::vector<Route> &getRoutes() const;
 
     void addRoutes(const Route &_route);
 
@@ -108,9 +108,9 @@ public:
 
     std::string toString(std::ostringstream &oss);
 
-    uint64_t getHyperperiod() const;
+    [[nodiscard]] uint64_t getHyperperiod() const;
 
-    void addGateControlEntry();
+    bool addGateControlEntry(std::mutex &gcl_lock);
 
     void setHyperperiod(uint64_t hyperperiod);
 
