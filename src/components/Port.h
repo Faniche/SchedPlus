@@ -8,6 +8,7 @@
 
 #include <uuid/uuid.h>
 #include <vector>
+#include <mutex>
 
 typedef bool GATE_EVENT;
 #define GATE_CLOSE  false
@@ -16,6 +17,7 @@ typedef bool GATE_EVENT;
 class GateControlEntry {
 private:
     std::vector<GATE_EVENT> gateStatesValue;
+//    std::atomic<std::vector<GATE_EVENT>> gateStatesValue;
     u_int64_t startTime;
     u_int64_t timeIntervalValue;
 
@@ -69,7 +71,13 @@ public:
 
     [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
 
-    void addGateControlEntry(const GateControlEntry &gateControlEntry);
+    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
+
+    static bool compareGCL(const GateControlEntry & a, const GateControlEntry &b);
+
+    void sortGCL(std::mutex &gcl_lock);
+
+    bool checkGCLCollision();
 
     [[nodiscard]] int getQsize() const;
 
