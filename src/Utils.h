@@ -52,7 +52,7 @@ public:
                 }
                 b = flows[i].getPeriod() / 100;
                 oss << ", " << flows[i].getPeriod();
-                hyperPeriod =lcm(a, b);
+                hyperPeriod = lcm(a, b);
                 a = hyperPeriod;
             }
         }
@@ -74,7 +74,7 @@ public:
 
     PRIORITY_CODE_POINT getRandPCP() {
 //        return getRandInt(0, 7);
-        return getRandInt(5, 6);
+        return static_cast<PRIORITY_CODE_POINT>(getRandInt(5, 6));
     }
 
     int getRandESIdx(std::vector<Node *> &esList) {
@@ -84,6 +84,45 @@ public:
     int getDDL(PRIORITY_CODE_POINT priority) {
         return 0;
     }
+
+    /**
+    * @brief Get all routes of flow
+    * @param map   : node index map
+    * @param flow  : flow waiting for calculation all routes
+    * @param graph : Integer adjacency matrix of all node
+    * @param alllinks : all alllinks vector
+    **/
+    void calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
+        size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
+        if (srcIdx == INT64_MAX)
+            spdlog::error("can not find the index of node: %s", flow.getSrc()->getName());
+        size_t destIdx = Node::nodeToIdx(map, flow.getDest());
+        if (destIdx == INT64_MAX)
+            spdlog::error("can not find the index of node: %s", flow.getDest()->getName());
+        std::vector<std::vector<size_t>> routes;
+        graph.getAllRoutes(srcIdx, destIdx, routes);
+        for (auto &idxRoute: routes) {
+            srcIdx = idxRoute[0];
+            Route route;
+            int tmp = 0;
+            for (int j = 1; j < idxRoute.size(); ++j) {
+                destIdx = idxRoute[j];
+                std::reference_wrapper<DirectedLink> link1 = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
+                srcIdx = destIdx;
+                route.addLink(link1);
+//                route.links.push_back(link1);
+                /* Calculate the e2e latency except queue delay of flow. */
+                int trans_delay = flow.getFrameLength() * link1.get().getSrcPort().getMacrotick();
+                int proc_delay = link1.get().getSrcNode()->getDpr();
+                int prop_delay = link1.get().getLen() * link1.get().getPropSpeed();
+                tmp += trans_delay + proc_delay + prop_delay;
+            }
+            route.setE2E(tmp);
+            flow.addRoutes(route);
+        }
+
+    }
+
 };
 
 #endif //SCHEDPLUS_UTILS_H
