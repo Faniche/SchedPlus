@@ -10,8 +10,8 @@
  * @brief Definition of Priority Code Point for vlan frame https://en.wikipedia.org/wiki/IEEE_P802.1p
  *
  */
-typedef int PRIORITY_CODE_POINT;
-enum {
+//typedef int PRIORITY_CODE_POINT;
+enum PRIORITY_CODE_POINT {
     P0,     // 0 (lowest)       Background
     P1,     // 1 (default)      Best effort
     P2,     // 2                Excellent effort
