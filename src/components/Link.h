@@ -8,6 +8,7 @@
 
 #include <uuid/uuid.h>
 #include <vector>
+#include <mutex>
 #include "Port.h"
 #include "Node.h"
 
@@ -25,6 +26,8 @@ private:
     int propSpeed = 5;
 public:
 
+    DirectedLink();
+
     DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort);
 
     DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort, int _len, int _propSpeed);
@@ -37,7 +40,11 @@ public:
 
     [[nodiscard]] const Port &getSrcPort() const;
 
-    void addGateControlEntry(const GateControlEntry &gateControlEntry);
+    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
+
+    void sortGCL(std::mutex &gcl_lock);
+
+    bool checkGCLCollision();
 
     [[nodiscard]] const Port &getDestPort() const;
 
@@ -51,7 +58,7 @@ public:
 
     void setPropSpeed(int propSpeed);
 
-    static DirectedLink *nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
+    static std::reference_wrapper<DirectedLink> nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
 };
 
 class FullDuplexLink {

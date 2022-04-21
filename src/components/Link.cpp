@@ -7,6 +7,8 @@
 #include <utility>
 #include "Link.h"
 
+DirectedLink::DirectedLink() {}
+
 DirectedLink::DirectedLink(Node *_srcNode,
                            Node *_destNode,
                            Port _srcPort,
@@ -47,27 +49,36 @@ const Port &DirectedLink::getSrcPort() const {
     return srcPort;
 }
 
-void DirectedLink::addGateControlEntry(const GateControlEntry &gateControlEntry) {
-    this->srcPort.addGateControlEntry(gateControlEntry);
+void DirectedLink::addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock) {
+    this->srcPort.addGateControlEntry(gateControlEntry, gcl_lock);
+}
+
+void DirectedLink::sortGCL(std::mutex &gcl_lock) {
+    this->srcPort.sortGCL(gcl_lock);
+}
+
+bool DirectedLink::checkGCLCollision() {
+    return this->srcPort.checkGCLCollision();
 }
 
 const Port &DirectedLink::getDestPort() const {
     return destPort;
 }
 
-DirectedLink *
+std::reference_wrapper<DirectedLink>
 DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links) {
     spdlog::set_level(spdlog::level::info);
     spdlog::debug("_srcNode: %v, _destNode: %v", _srcNode->getName(), _destNode->getName());
+    DirectedLink directedLink;
     for (size_t i = 0; i < links.size(); ++i) {
         spdlog::debug("comparing link: {}", i);
         if (uuid_compare(links[i].getSrcNode()->getId(), _srcNode->getId()) == 0
             && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
             spdlog::debug("link mem address: {}", (void *) &links[i]);
-            return &links[i];
+            return links[i];
         }
     }
-    return nullptr;
+    return directedLink;
 }
 
 int DirectedLink::getSpeed() const {
