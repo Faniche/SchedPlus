@@ -9,17 +9,14 @@
 #include "../components/Flow.h"
 #include "../../lib/openGA.hpp"
 
-typedef size_t node_idx;
-
 struct TTFlows {
-    std::vector<std::reference_wrapper<Flow>> flows;
-//    std::map<node_idx, Node *> nodeMap;
-    std::map<node_idx, std::vector<std::reference_wrapper<Flow>>> flowGroup;
-
+    std::vector<uint32_t> offsets;
+    std::vector<uint32_t> selected_route_idx;
+    std::map<uint32_t, std::vector<std::pair<uint32_t , uint32_t >>> transmit_intervals;
     std::string to_string(std::ostringstream &oss) const {
-        oss << "{" << flows[0].get().getOffset();
-        for (auto flow: flows) {
-            oss << ", " << flow.get().getOffset();
+        oss << "{" << offsets[0];
+        for (int i = 1; i < offsets.size(); ++i) {
+            oss << ", " << offsets[i];
         };
         oss << "}";
         return oss.str();
@@ -29,14 +26,15 @@ struct TTFlows {
 struct MyMiddleCost {
     // This is where the results of simulation
     // is stored but not yet finalized.
+    std::vector<uint32_t> delivery_guarantees;
 
     double e2e;
 
     double ddl;
 
-    double delayQueue = 0;
-
-    double bandwidthUsage = 0;
+//    double delayQueue = 0;
+//
+//    double bandwidthUsage = 0;
 
 };
 

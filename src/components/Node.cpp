@@ -7,7 +7,7 @@
 #include "Node.h"
 #include "NodeImpl.h"
 
-Node::Node(std::string _name, NODE_TYPE _nodeType, int _dpr) {
+Node::Node(std::string _name, NODE_TYPE _nodeType, uint32_t _dpr) {
     uuid_generate(this->id);
     this->name = std::move(_name);
     this->nodeType = _nodeType;
@@ -41,15 +41,30 @@ size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
     return INT64_MAX;
 }
 
-int Node::getDpr() const {
+/**
+ * @brief get precess delay of node, unit： ns
+ * @return   uint32_t
+ * */
+uint32_t Node::getDpr() const {
     return dpr;
 }
 
-void Node::setDpr(int _dpr) {
+/**
+ * @brief set precess delay of node.
+ * @param   _dpr    process delay, unit： ns
+ * */
+void Node::setDpr(uint32_t _dpr) {
     Node::dpr = _dpr;
 }
 
-Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr){
+/**
+ * @brief create a node pointer with given type
+ * @param   nodeType    node type of the created node
+ * @param   name        node name
+ * @param   dpr         node process delay, unit: ns
+ * @return  Node *
+ * */
+Node *createNode(NODE_TYPE nodeType, const std::string& name, uint32_t dpr){
     Node *node;
     switch (nodeType) {
         case END_SYSTEM:

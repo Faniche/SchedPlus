@@ -9,6 +9,8 @@
 #include <map>
 #include "Port.h"
 
+typedef size_t node_idx;
+
 enum NODE_TYPE {
     SWITCH,
     END_SYSTEM
@@ -19,11 +21,11 @@ protected:
     uuid_t id{};
     std::string name;
     NODE_TYPE nodeType;
-    /* the process delay of node */
-    int dpr;
+    /* the process delay of node: ns*/
+    uint32_t dpr;
 
 public:
-    Node(std::string name, NODE_TYPE _nodeType, int _dpr);
+    Node(std::string name, NODE_TYPE _nodeType, uint32_t _dpr);
 
     virtual ~Node();
 
@@ -39,11 +41,11 @@ public:
 
     static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
 
-    int getDpr() const;
+    [[nodiscard]] uint32_t getDpr() const;
 
-    void setDpr(int dpr);
+    void setDpr(uint32_t dpr);
 };
 
-Node *createNode(NODE_TYPE nodeType, const std::string& name, int dpr);
+Node *createNode(NODE_TYPE nodeType, const std::string& name, uint32_t dpr);
 
 #endif //SCHEDPLUS_NODE_H

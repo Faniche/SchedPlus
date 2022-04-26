@@ -7,9 +7,8 @@
 #include <spdlog/spdlog.h>
 #include "Flow.h"
 #include "Link.h"
-#include "../Delivery/DeliveryGuarantee.h"
 
-const std::vector<int> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18, 20};
+const std::vector<uint8_t> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18, 20};
 
 /**
  * @param period                Period of frame
@@ -20,8 +19,8 @@ const std::vector<int> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18,
  * @param rep                   The replication of the frame, default 1
  * @param multicast             The flow is multicast of not
  */
-Flow::Flow(uint64_t _id, int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
-           bool isCritical, int rep, bool multicast)
+Flow::Flow(uint32_t _id, uint32_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
+           bool isCritical, uint8_t rep, bool multicast)
         : id(_id),
           period(period),
           priorityCodePoint(priorityCodePoint),
@@ -30,22 +29,27 @@ Flow::Flow(uint64_t _id, int period, PRIORITY_CODE_POINT priorityCodePoint, Node
           isCritical(isCritical),
           rep(rep),
           multicast(multicast) {
-    DeliveryGuarantee deliveryGuarantee(E2E, 0);
+//    DeliveryGuarantee deliveryGuarantee(E2E, 0);
+//    deliveryGuarantees.emplace_back(deliveryGuarantee);
 }
 
-uint64_t Flow::getId() const {
+uint32_t Flow::getId() const {
     return id;
 }
 
-int Flow::getOffset() const {
+uint32_t Flow::getOffset() const {
     return offset;
 }
 
-void Flow::setOffset(int _offset) {
+void Flow::setOffset(uint32_t _offset) {
     Flow::offset = _offset;
 }
 
-int Flow::getPeriod() const {
+/**
+ * @brief return period of flow, unit: ns
+ * @return flow period: ns
+ **/
+uint32_t Flow::getPeriod() const {
     return period;
 }
 
@@ -60,7 +64,7 @@ void Flow::addDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
 void Flow::setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
     for (auto &i: deliveryGuarantees) {
         if (i.getType() == deliveryGuarantee.getType()) {
-            i.setLowerVal(deliveryGuarantee.getLoverObj());
+            i.setLowerVal(deliveryGuarantee.getLowerVal());
             i.setUpperVal(deliveryGuarantee.getUpperVal());
             i.setLoverObj(deliveryGuarantee.getLoverObj());
             i.setUpperObj(deliveryGuarantee.getUpperObj());
@@ -74,26 +78,26 @@ void Flow::setDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee) {
 void Flow::setDeliveryGuarantee() {
     for (auto &deliveryGuarantee: deliveryGuarantees) {
         if (deliveryGuarantee.getType() == DDL) {
-            deliveryGuarantee.setLoverObj(offset + routes.at(selectedRouteInx).getE2E());
+            deliveryGuarantee.setLoverObj(offset + routes[selectedRouteInx].getE2E());
         } else if (deliveryGuarantee.getType() == E2E) {
-            deliveryGuarantee.setLoverObj(queueDelay + routes.at(selectedRouteInx).getE2E());
+            deliveryGuarantee.setLoverObj(queueDelay + routes[selectedRouteInx].getE2E());
         }
     }
 }
 
-int Flow::getQueueDelay() const {
+uint32_t Flow::getQueueDelay() const {
     return queueDelay;
 }
 
-void Flow::setQueueDelay(int _queueDelay) {
+void Flow::setQueueDelay(uint32_t _queueDelay) {
     Flow::queueDelay = _queueDelay;
 }
 
-int Flow::getFrameLength() const {
+uint16_t Flow::getFrameLength() const {
     return frameLength;
 }
 
-void Flow::setFrameLength(int _frameLength) {
+void Flow::setFrameLength(uint16_t _frameLength) {
     Flow::frameLength = _frameLength;
 }
 
@@ -114,7 +118,7 @@ bool Flow::isCritical1() const {
     return isCritical;
 }
 
-int Flow::getRep() const {
+uint8_t Flow::getRep() const {
     return rep;
 }
 
@@ -130,11 +134,11 @@ void Flow::addRoutes(const Route &_route) {
     routes.push_back(_route);
 }
 
-int Flow::getSelectedRouteInx() const {
+uint16_t Flow::getSelectedRouteInx() const {
     return selectedRouteInx;
 }
 
-void Flow::setSelectedRouteInx(int _selectedRouteInx) {
+void Flow::setSelectedRouteInx(uint16_t _selectedRouteInx) {
     Flow::selectedRouteInx = _selectedRouteInx;
 }
 
@@ -143,7 +147,6 @@ std::string Flow::toString(std::ostringstream &oss) {
     oss << "\t" << R"("id": ")" << id << "," << std::endl;
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
-//    oss << "\t" << R"("deadline": )" << deadline << "," << std::endl;
     oss << "\t" << R"("length": )" << frameLength << "," << std::endl;
     oss << "\t" << R"("priorityCodePoint": )" << priorityCodePoint << "," << std::endl;
     oss << "\t" << R"("srcNode": ")" << src->getName() << "," << std::endl;
@@ -170,11 +173,11 @@ std::string Flow::toString(std::ostringstream &oss) {
     return oss.str();
 }
 
-uint64_t Flow::getHyperperiod() const {
+uint32_t Flow::getHyperperiod() const {
     return hyperperiod;
 }
 
-void Flow::setHyperperiod(uint64_t _hyperperiod) {
+void Flow::setHyperperiod(uint32_t _hyperperiod) {
     Flow::hyperperiod = _hyperperiod;
 }
 
@@ -187,17 +190,18 @@ void Flow::setHyperperiod(uint64_t _hyperperiod) {
 bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
     bool ret = true;
     if (this->priorityCodePoint == P5 || this->priorityCodePoint == P6) {
-        int accumulatedDelay = this->offset;
-        int prop_delay = 0, trans_delay = 0, proc_delay = 0;
-        for (auto &link: routes.at(this->selectedRouteInx).getLinks()) {
+        uint32_t accumulatedDelay = this->offset;
+        uint32_t prop_delay = 0, trans_delay = 0, proc_delay = 0;
+        for (auto &link: routes[this->selectedRouteInx].getLinks()) {
             /* Add gate control entity. */
             proc_delay = link.get().getSrcNode()->getDpr();
             trans_delay = this->frameLength * link.get().getSrcPort().getMacrotick();
             accumulatedDelay += proc_delay;
             /* Add gate control entity for every frame of flow in a hycperperiod */
+            uint32_t sendTimes = hyperperiod / period;
             spdlog::set_level(spdlog::level::info);
-            spdlog::debug("hyperperiod: {}, send {} times.", hyperperiod, hyperperiod / period);
-            for (int i = 0; i < hyperperiod / frameLength; ++i) {
+            spdlog::debug("hyperperiod: {}, send {} times.", hyperperiod, sendTimes);
+            for (int i = 0; i < sendTimes; ++i) {
                 accumulatedDelay += offset + i * period;
                 GateControlEntry gateControlEntry;
                 gateControlEntry.setGateStatesValue(P6, GATE_OPEN);
@@ -218,49 +222,52 @@ bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
 }
 
 /**
- * @brief Generate a period of frame in a flow. unit: μs
- * @retval int
+ * @brief Generate a period of frame in a flow. unit: ns
+ * @retval uint32_t
  */
-int Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
+uint32_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     if (pcp < 5) {
         spdlog::error("Invalid PCP code: {}", pcp);
         return 0;
     }
     static std::random_device randomDevice;
     static std::default_random_engine engine(randomDevice());
-    static std::uniform_int_distribution<int> randFramePeriod(0, randPeriod.size() - 1);
-
-    int a = randPeriod.at(randFramePeriod(engine));
+    static std::uniform_int_distribution<uint8_t> randFramePeriod(0, randPeriod.size() - 1);
+    uint8_t idx = randFramePeriod(engine);
+    uint32_t a = randPeriod[idx];
     switch (pcp) {
         case P5:
             // 5                Cyclic                  2ms-20ms
-            while (a == 1) a = randPeriod.at(randFramePeriod(engine));
-            a *= 1000;
+            while (a == 1) a = randPeriod[randFramePeriod(engine)];
+            //     μs     ns
+            a *= (1000 * 1000);
             break;
         case P6:
             // 6                Isochronous             100μs-2ms
-            a *= 100;
+            //     μs    ns
+            a *= (100 * 1000);
             break;
         case P7:
             // 7 (highest)      Network control         50ms-1s
-            a *= (1000 * 50);
+            //          μs     ns
+            a *= (50 * 1000 * 1000);
             break;
     }
     return a;
 }
 
-int Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
+uint16_t Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
     static std::random_device randomDevice;
     static std::default_random_engine engine(randomDevice());
-    static std::uniform_int_distribution<int> randFrameLen;
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP0(300, 1500);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP1(1000, 1500);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP2(500, 1500);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP3(100, 1500);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP4(100, 200);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP5(50, 1000);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP6(30, 100);
-    static std::uniform_int_distribution<int>::param_type paramFrameLenP7(50, 500);
+    static std::uniform_int_distribution<uint16_t> randFrameLen;
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP0(300, 1500);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP1(1000, 1500);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP2(500, 1500);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP3(100, 1500);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP4(100, 200);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP5(50, 1000);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP6(30, 100);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP7(50, 500);
     switch (pcp) {
         case P0:
             randFrameLen.param(paramFrameLenP0);
@@ -287,8 +294,8 @@ int Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
             randFrameLen.param(paramFrameLenP7);
             break;
     }
-    int a = randFrameLen(engine);
-    a = a - a % 10;
+    uint16_t a = randFrameLen(engine);
+    a -= a % 10;
     return a;
 }
 

@@ -5,7 +5,9 @@
 #ifndef SCHEDPLUS_DELIVERYGUARANTEE_H
 #define SCHEDPLUS_DELIVERYGUARANTEE_H
 
-//typedef int ;
+#include <cstdint>
+
+//typedef uint32_t ;
 enum DELIVERY_GUARANTEE {
     BANDWIDTH,
     DDL,
@@ -18,32 +20,32 @@ enum DELIVERY_GUARANTEE {
 class DeliveryGuarantee {
 private:
     DELIVERY_GUARANTEE type;
-    int lower_val = 0;
-    int upper_val = 0;
-    int lover_obj = 0;
-    int upper_obj = 0;
+    uint32_t lower_val = 0;
+    uint32_t upper_val = 0;
+    uint32_t lover_obj = 0;
+    uint32_t upper_obj = 0;
 public:
-    DeliveryGuarantee(DELIVERY_GUARANTEE type, int lowerVal);
+    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal);
 
-    DeliveryGuarantee(DELIVERY_GUARANTEE type, int lowerVal, int upperVal);
+    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal, uint32_t upperVal);
 
     [[nodiscard]] DELIVERY_GUARANTEE getType() const;
 
-    [[nodiscard]] int getLowerVal() const;
+    [[nodiscard]] uint32_t getLowerVal() const;
 
-    void setLowerVal(int lowerVal);
+    void setLowerVal(uint32_t lowerVal);
 
-    [[nodiscard]] int getUpperVal() const;
+    [[nodiscard]] uint32_t getUpperVal() const;
 
-    void setUpperVal(int upperVal);
+    void setUpperVal(uint32_t upperVal);
 
-    [[nodiscard]] int getLoverObj() const;
+    [[nodiscard]] uint32_t getLoverObj() const;
 
-    void setLoverObj(int loverObj);
+    void setLoverObj(uint32_t loverObj);
 
-    [[nodiscard]] int getUpperObj() const;
+    [[nodiscard]] uint32_t getUpperObj() const;
 
-    void setUpperObj(int upperObj);
+    void setUpperObj(uint32_t upperObj);
 
 
 };

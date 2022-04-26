@@ -41,7 +41,7 @@ private:
     std::vector<std::reference_wrapper<DirectedLink>> links;
 
     /* End to end latency except queue delay */
-    int e2e = 0;
+    uint32_t e2e = 0;
 
 public:
     explicit Route();
@@ -52,9 +52,9 @@ public:
 
     void addLink(DirectedLink &link);
 
-    [[nodiscard]] int getE2E() const;
+    [[nodiscard]] uint32_t getE2E() const;
 
-    void setE2E(int e2E);
+    void setE2E(uint32_t e2E);
 };
 
 

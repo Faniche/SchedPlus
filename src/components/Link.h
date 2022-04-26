@@ -14,25 +14,27 @@
 
 class DirectedLink {
 private:
-    uuid_t id{};
+    uint32_t id;
     Node *srcNode;
     Node *destNode;
     Port srcPort;
     Port destPort;
-    int speed = 1000000000;
+    uint64_t speed = 1000000000;
     /* the length of link */
-    int len = 20;
+    uint16_t len = 20;
     /* the signal propagation speed of the media, val: nanosecond per meter */
-    int propSpeed = 5;
+    uint16_t propSpeed = 5;
 public:
 
     DirectedLink();
 
     DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort);
 
-    DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort, int _len, int _propSpeed);
+    DirectedLink(Node *_srcNode, Node *_destNode, Port _srcPort, Port _destPort, uint16_t _len, uint16_t _propSpeed);
 
-    [[nodiscard]] const unsigned char *getId() const;
+    [[nodiscard]] uint32_t getId() const;
+
+    void setId(uint32_t _id);
 
     [[nodiscard]] Node *getSrcNode() const;
 
@@ -48,15 +50,15 @@ public:
 
     [[nodiscard]] const Port &getDestPort() const;
 
-    [[nodiscard]] int getSpeed() const;
+    [[nodiscard]] uint64_t getSpeed() const;
 
-    [[nodiscard]] int getLen() const;
+    [[nodiscard]] uint16_t getLen() const;
 
-    void setLen(int len);
+    void setLen(uint16_t len);
 
-    [[nodiscard]] int getPropSpeed() const;
+    [[nodiscard]] uint16_t getPropSpeed() const;
 
-    void setPropSpeed(int propSpeed);
+    void setPropSpeed(uint16_t propSpeed);
 
     static std::reference_wrapper<DirectedLink> nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
 };

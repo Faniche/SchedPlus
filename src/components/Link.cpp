@@ -15,28 +15,27 @@ DirectedLink::DirectedLink(Node *_srcNode,
                            Port _destPort) : srcNode(_srcNode),
                                             destNode(_destNode),
                                             srcPort(std::move(_srcPort)),
-                                            destPort(std::move(_destPort)) {
-    uuid_generate(id);
-}
+                                            destPort(std::move(_destPort)) {}
 
 DirectedLink::DirectedLink(Node *_srcNode,
                            Node *_destNode,
                            Port _srcPort,
                            Port _destPort,
-                           int _len,
-                           int _propSpeed) : srcNode(_srcNode),
+                           uint16_t _len,
+                           uint16_t _propSpeed) : srcNode(_srcNode),
                                              destNode(_destNode),
                                              srcPort(std::move(_srcPort)),
                                              destPort(std::move(_destPort)),
                                              len(_len),
-                                             propSpeed(_propSpeed){
-    uuid_generate(id);
-}
+                                             propSpeed(_propSpeed){}
 
-const unsigned char *DirectedLink::getId() const {
+uint32_t DirectedLink::getId() const {
     return id;
 }
 
+void DirectedLink::setId(uint32_t _id) {
+    DirectedLink::id = _id;
+}
 Node *DirectedLink::getSrcNode() const {
     return srcNode;
 }
@@ -81,23 +80,23 @@ DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::v
     return directedLink;
 }
 
-int DirectedLink::getSpeed() const {
+uint64_t DirectedLink::getSpeed() const {
     return speed;
 }
 
-int DirectedLink::getLen() const {
+uint16_t DirectedLink::getLen() const {
     return len;
 }
 
-void DirectedLink::setLen(int _len) {
+void DirectedLink::setLen(uint16_t _len) {
     DirectedLink::len = _len;
 }
 
-int DirectedLink::getPropSpeed() const {
+uint16_t DirectedLink::getPropSpeed() const {
     return propSpeed;
 }
 
-void DirectedLink::setPropSpeed(int _propSpeed) {
+void DirectedLink::setPropSpeed(uint16_t _propSpeed) {
     DirectedLink::propSpeed = _propSpeed;
 }
 

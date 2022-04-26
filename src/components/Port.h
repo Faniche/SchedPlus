@@ -18,23 +18,23 @@ class GateControlEntry {
 private:
     std::vector<GATE_EVENT> gateStatesValue;
 //    std::atomic<std::vector<GATE_EVENT>> gateStatesValue;
-    u_int64_t startTime;
-    u_int64_t timeIntervalValue;
+    uint32_t startTime;
+    uint32_t timeIntervalValue;
 
 public:
     GateControlEntry();
 
     [[nodiscard]] const std::vector<bool> &getGateStatesValue() const;
 
-    void setGateStatesValue(int idx, GATE_EVENT gateState);
+    void setGateStatesValue(uint8_t idx, GATE_EVENT gateState);
 
-    u_int64_t getStartTime() const;
+    [[nodiscard]] uint32_t getStartTime() const;
 
-    void setStartTime(u_int64_t startTime);
+    void setStartTime(uint32_t startTime);
 
-    [[nodiscard]] u_int64_t getTimeIntervalValue() const;
+    [[nodiscard]] uint32_t getTimeIntervalValue() const;
 
-    void setTimeIntervalValue(u_int64_t timeIntervalValue);
+    void setTimeIntervalValue(uint32_t timeIntervalValue);
 };
 
 
@@ -43,31 +43,31 @@ private:
     uuid_t id{};
 
     /* speed of port, default: 1Gbps */
-    int speed = 1000000000;
+    uint64_t speed = 1000000000;
 
     /* sending 1 byte shall spend 8 ns with Gigabit full duplex ethernet */
-    int macrotick = 8;
+    uint8_t macrotick = 8;
 
     std::vector<GateControlEntry> gateControlList;
 
     /* the bytes of cached frame in queue with priority 5 and 6 */
-    int qsize = 0;
+    uint32_t qsize = 0;
 
     /* the num of cached frame in queue with priority 5 and 6 */
-    int qlen = 0;
+    uint16_t qlen = 0;
 
-    std::vector<int> frameQueue;
+    std::vector<uint32_t> frameQueue;
 
 public:
     Port();
 
-    explicit Port(int speed);
+    explicit Port(uint64_t speed);
 
     [[nodiscard]] const unsigned char *getId() const;
 
-    [[nodiscard]] int getSpeed() const;
+    [[nodiscard]] uint64_t getSpeed() const;
 
-    [[nodiscard]] int getMacrotick() const;
+    [[nodiscard]] uint8_t getMacrotick() const;
 
     [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
 
@@ -79,17 +79,17 @@ public:
 
     bool checkGCLCollision();
 
-    [[nodiscard]] int getQsize() const;
+    [[nodiscard]] uint32_t getQsize() const;
 
-    void setQsize(int qsize);
+    void setQsize(uint32_t qsize);
 
-    [[nodiscard]] int getQlen() const;
+    [[nodiscard]] uint16_t getQlen() const;
 
-    void setQlen(int qlen);
+    void setQlen(uint16_t qlen);
 
-    [[nodiscard]] const std::vector<int> &getFrameQueue() const;
+    [[nodiscard]] const std::vector<uint32_t> &getFrameQueue() const;
 
-    void setFrameQueue(const std::vector<int> &frameQueue);
+    void setFrameQueue(const std::vector<uint32_t> &frameQueue);
 };
 
 

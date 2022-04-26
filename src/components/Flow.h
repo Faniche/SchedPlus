@@ -16,18 +16,18 @@
 
 class Flow {
 private:
-    uint64_t id;
+    uint32_t id;
 
     /* The sending offset in a hyperperiod of each frame */
-    int offset = 0;
+    uint32_t offset = 0;
 
     /* The interval between two frames of a Flow */
-    int period = 0;
+    uint32_t period = 0;
 
-    int queueDelay = 0;
+    uint32_t queueDelay = 0;
 
     /* The frame length include network headers of a packet of each frame */
-    int frameLength = 0;
+    uint16_t frameLength = 0;
 
     PRIORITY_CODE_POINT priorityCodePoint;
 
@@ -44,7 +44,7 @@ private:
     bool isCritical = true;
 
     /* the Replication of frame */
-    int rep = 1;
+    uint8_t rep = 1;
 
     /* the Flow is multicast or not */
     bool multicast = false;
@@ -53,22 +53,22 @@ private:
 
 //    std::vector<std::vector<DirectedLink *>> routes;
 
-    int selectedRouteInx = 0;
+    uint16_t selectedRouteInx = 0;
 
-    uint64_t hyperperiod = 0;
+    uint32_t hyperperiod = 0;
 
-    static const std::vector<int> randPeriod;
+    static const std::vector<uint8_t> randPeriod;
 
 public:
-    Flow(uint64_t _id, int period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, int rep, bool multicast);
+    Flow(uint32_t _id, uint32_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
 
-    [[nodiscard]] uint64_t getId() const;
+    [[nodiscard]] uint32_t getId() const;
 
-    [[nodiscard]] int getOffset() const;
+    [[nodiscard]] uint32_t getOffset() const;
 
-    void setOffset(int offset);
+    void setOffset(uint32_t offset);
 
-    [[nodiscard]] int getPeriod() const;
+    [[nodiscard]] uint32_t getPeriod() const;
 
     [[nodiscard]] const std::vector<DeliveryGuarantee> &getDeliveryGuarantees() const;
 
@@ -78,13 +78,13 @@ public:
 
     void setDeliveryGuarantee();
 
-    [[nodiscard]] int getQueueDelay() const;
+    [[nodiscard]] uint32_t getQueueDelay() const;
 
-    void setQueueDelay(int queueDelay);
+    void setQueueDelay(uint32_t queueDelay);
 
-    [[nodiscard]] int getFrameLength() const;
+    [[nodiscard]] uint16_t getFrameLength() const;
 
-    void setFrameLength(int frameLength);
+    void setFrameLength(uint16_t frameLength);
 
     [[nodiscard]] PRIORITY_CODE_POINT getPriorityCodePoint() const;
 
@@ -94,7 +94,7 @@ public:
 
     [[nodiscard]] bool isCritical1() const;
 
-    [[nodiscard]] int getRep() const;
+    [[nodiscard]] uint8_t getRep() const;
 
     [[nodiscard]] bool isMulticast() const;
 
@@ -102,21 +102,21 @@ public:
 
     void addRoutes(const Route &_route);
 
-    [[nodiscard]] int getSelectedRouteInx() const;
+    [[nodiscard]] uint16_t getSelectedRouteInx() const;
 
-    void setSelectedRouteInx(int selectedRouteInx);
+    void setSelectedRouteInx(uint16_t selectedRouteInx);
 
     std::string toString(std::ostringstream &oss);
 
-    [[nodiscard]] uint64_t getHyperperiod() const;
+    [[nodiscard]] uint32_t getHyperperiod() const;
 
     bool addGateControlEntry(std::mutex &gcl_lock);
 
-    void setHyperperiod(uint64_t hyperperiod);
+    void setHyperperiod(uint32_t hyperperiod);
 
-    static int getRandomPeriod(PRIORITY_CODE_POINT pcp);
+    static uint32_t getRandomPeriod(PRIORITY_CODE_POINT pcp);
 
-    static int getRandomFrameLength(PRIORITY_CODE_POINT pcp);
+    static uint16_t getRandomFrameLength(PRIORITY_CODE_POINT pcp);
 
 };
 

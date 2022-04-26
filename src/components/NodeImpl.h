@@ -15,7 +15,7 @@ class EndSystem : public Node {
 private:
     Port port;
 public:
-    explicit EndSystem(std::string name, int dpr);
+    explicit EndSystem(std::string name, uint32_t dpr);
 
     [[nodiscard]] const Port &getPort() const;
 
@@ -26,14 +26,14 @@ public:
 
 class Switch : public Node{
 private:
-    int portNum = 8;
+    uint8_t portNum = 8;
     std::vector<Port> ports;
 public:
-    explicit Switch(std::string name, int dpr);
+    explicit Switch(std::string name, uint32_t dpr);
 
-    Switch(std::string name, int dpr, int portNum);
+    Switch(std::string name, uint32_t dpr, uint8_t portNum);
 
-    [[nodiscard]] int getPortNum() const;
+    [[nodiscard]] uint8_t getPortNum() const;
 
     [[nodiscard]] const std::vector<Port> &getPorts() const;
 
@@ -53,7 +53,7 @@ private:
     uuid_t id{};
     std::string name;
     NODE_SEARCH_STATE state = NOT_VISITED;
-    int hop = INT32_MAX;
+    uint8_t hop = INT8_MAX;
     uuid_t parent{};
 public:
 
@@ -69,9 +69,9 @@ public:
 
     void setState(NODE_SEARCH_STATE _state);
 
-    [[nodiscard]] int getHop() const;
+    [[nodiscard]] uint8_t getHop() const;
 
-    void setHop(int hop);
+    void setHop(uint8_t hop);
 
     [[nodiscard]] const unsigned char *getParent() const;
 

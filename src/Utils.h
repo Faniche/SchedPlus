@@ -47,22 +47,23 @@ public:
             if (flows[i].getPeriod() != 0) {
                 if (a == 0) {
                     oss << "period: {" << flows[i].getPeriod();
-                    a = flows[i].getPeriod() / 100;
+                    // tens of ms
+                    a = flows[i].getPeriod() / 100000;
                     continue;
                 }
-                b = flows[i].getPeriod() / 100;
+                b = flows[i].getPeriod() / 100000;
                 oss << ", " << flows[i].getPeriod();
                 hyperPeriod = lcm(a, b);
                 a = hyperPeriod;
             }
         }
         oss << "}";
-        hyperPeriod *= 100;
+        hyperPeriod *= 100000;
         for (auto &flow: flows) {
             flow.setHyperperiod(hyperPeriod);
         }
-        spdlog::set_level(spdlog::level::debug);
-        spdlog::debug("Periods(unit: μs) of flows: {}, hyperperiod: {}μs", oss.str(), hyperPeriod);
+        spdlog::set_level(spdlog::level::info);
+        spdlog::info("Periods(unit: ns) of flows: {}, hyperperiod: {}ns", oss.str(), hyperPeriod);
         return hyperPeriod;
     }
 
@@ -77,12 +78,8 @@ public:
         return static_cast<PRIORITY_CODE_POINT>(getRandInt(5, 6));
     }
 
-    int getRandESIdx(std::vector<Node *> &esList) {
+    node_idx getRandESIdx(std::vector<Node *> &esList) {
         return getRandInt(0, esList.size() - 1);
-    }
-
-    int getDDL(PRIORITY_CODE_POINT priority) {
-        return 0;
     }
 
     /**
@@ -104,7 +101,7 @@ public:
         for (auto &idxRoute: routes) {
             srcIdx = idxRoute[0];
             Route route;
-            int tmp = 0;
+            uint32_t tmp = 0;
             for (int j = 1; j < idxRoute.size(); ++j) {
                 destIdx = idxRoute[j];
                 std::reference_wrapper<DirectedLink> link1 = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
@@ -112,9 +109,9 @@ public:
                 route.addLink(link1);
 //                route.links.push_back(link1);
                 /* Calculate the e2e latency except queue delay of flow. */
-                int trans_delay = flow.getFrameLength() * link1.get().getSrcPort().getMacrotick();
-                int proc_delay = link1.get().getSrcNode()->getDpr();
-                int prop_delay = link1.get().getLen() * link1.get().getPropSpeed();
+                uint32_t trans_delay = flow.getFrameLength() * link1.get().getSrcPort().getMacrotick();
+                uint32_t proc_delay = link1.get().getSrcNode()->getDpr();
+                uint32_t prop_delay = link1.get().getLen() * link1.get().getPropSpeed();
                 tmp += trans_delay + proc_delay + prop_delay;
             }
             route.setE2E(tmp);
