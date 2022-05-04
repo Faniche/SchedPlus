@@ -67,13 +67,13 @@ const Port &DirectedLink::getDestPort() const {
 std::reference_wrapper<DirectedLink>
 DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links) {
     spdlog::set_level(spdlog::level::info);
-    spdlog::debug("_srcNode: %v, _destNode: %v", _srcNode->getName(), _destNode->getName());
+//    spdlog::get("console")->debug("_srcNode: %v, _destNode: %v", _srcNode->getName(), _destNode->getName());
     DirectedLink directedLink;
     for (size_t i = 0; i < links.size(); ++i) {
-        spdlog::debug("comparing link: {}", i);
+        spdlog::get("console")->debug("comparing link: {}", i);
         if (uuid_compare(links[i].getSrcNode()->getId(), _srcNode->getId()) == 0
             && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
-            spdlog::debug("link mem address: {}", (void *) &links[i]);
+            spdlog::get("console")->debug("link mem address: {}", (void *) &links[i]);
             return links[i];
         }
     }
