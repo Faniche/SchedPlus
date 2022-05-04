@@ -1173,7 +1173,11 @@ NS_EA_BEGIN ;
                     init_genes(X.genes, [this]() { return random01(); });
                     accepted = init_population_try(*p_generation0, X, index);
                     (*attemps)++;
+                    if (*attemps % 1000 == 0) {
+                        spdlog::get("console")->debug("Population {} has tried to init for {} times.", index, *attemps);
+                    }
                 }
+                spdlog::get("console")->debug("Population {} has been inited after {} times init operation.", index, *attemps);
                 active_thread = false;
             }
         }
@@ -1369,7 +1373,7 @@ NS_EA_BEGIN ;
 	* This function generates the initial population
 	****************************************************/
         void init_population(thisGenerationType &generation0) {
-            generation0.chromosomes.clear();
+            generation0.chromosomes.shrink_to_fit();
             generation0.chromosomes.reserve(population); // push_back can invalidate the vector
 
             unsigned int new_solutions_offset = (unsigned int) generation0.chromosomes.size();
