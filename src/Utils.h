@@ -38,32 +38,33 @@ public:
     }
 
     /**
-     * @brief unit: μs
+     * @brief unit: ns
      */
-    static uint64_t getHyperPeriod(std::vector<Flow> &flows, std::ostringstream &oss) {
+    static uint64_t getHyperPeriod(std::vector<std::reference_wrapper<Flow>> &flows, std::ostringstream &oss) {
         oss.str("");
         long long hyperPeriod = 0, a = 0, b = 0;
-        for (size_t i = 0; i < flows.size(); ++i) {
-            if (flows[i].getPeriod() != 0) {
+        for (auto & flow : flows) {
+            if (flow.get().getPeriod() != 0) {
                 if (a == 0) {
-                    oss << "period: {" << flows[i].getPeriod();
+                    oss << "period: {" << flow.get().getPeriod();
                     // tens of ms
-                    a = flows[i].getPeriod() / 100000;
+                    a = flow.get().getPeriod() / 100000;
+                    hyperPeriod = a;
                     continue;
                 }
-                b = flows[i].getPeriod() / 100000;
-                oss << ", " << flows[i].getPeriod();
+                b = flow.get().getPeriod() / 100000;
+                oss << ", " << flow.get().getPeriod();
                 hyperPeriod = lcm(a, b);
                 a = hyperPeriod;
             }
         }
         oss << "}";
         hyperPeriod *= 100000;
-        for (auto &flow: flows) {
-            flow.setHyperperiod(hyperPeriod);
-        }
-        spdlog::set_level(spdlog::level::info);
-        spdlog::info("Periods(unit: ns) of flows: {}, hyperperiod: {}ns", oss.str(), hyperPeriod);
+//        for (auto &flow: flows) {
+//            flow.get().setHyperperiod(hyperPeriod);
+//        }
+//        spdlog::set_level(spdlog::level::info);
+        spdlog::get("console")->debug("Periods(unit: ns) of flows: {}, hyperperiod: {}ns", oss.str(), hyperPeriod);
         return hyperPeriod;
     }
 
@@ -92,10 +93,10 @@ public:
     void calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
         size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
         if (srcIdx == INT64_MAX)
-            spdlog::error("can not find the index of node: %s", flow.getSrc()->getName());
+            spdlog::get("console")->error("can not find the index of node: %s", flow.getSrc()->getName());
         size_t destIdx = Node::nodeToIdx(map, flow.getDest());
         if (destIdx == INT64_MAX)
-            spdlog::error("can not find the index of node: %s", flow.getDest()->getName());
+            spdlog::get("console")->error("can not find the index of node: %s", flow.getDest()->getName());
         std::vector<std::vector<size_t>> routes;
         graph.getAllRoutes(srcIdx, destIdx, routes);
         for (auto &idxRoute: routes) {
