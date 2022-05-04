@@ -144,7 +144,7 @@ void Flow::setSelectedRouteInx(uint16_t _selectedRouteInx) {
 
 std::string Flow::toString(std::ostringstream &oss) {
     oss << "{\n";
-    oss << "\t" << R"("id": ")" << id << "," << std::endl;
+    oss << "\t" << R"("id": )" << id << "," << std::endl;
     oss << "\t" << R"("offset": )" << offset << "," << std::endl;
     oss << "\t" << R"("period": )" << period << "," << std::endl;
     oss << "\t" << R"("length": )" << frameLength << "," << std::endl;
@@ -200,7 +200,7 @@ bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
             /* Add gate control entity for every frame of flow in a hycperperiod */
             uint32_t sendTimes = hyperperiod / period;
             spdlog::set_level(spdlog::level::info);
-            spdlog::debug("hyperperiod: {}, send {} times.", hyperperiod, sendTimes);
+            spdlog::get("console")->debug("hyperperiod: {}, send {} times.", hyperperiod, sendTimes);
             for (int i = 0; i < sendTimes; ++i) {
                 accumulatedDelay += offset + i * period;
                 GateControlEntry gateControlEntry;
@@ -227,7 +227,7 @@ bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
  */
 uint32_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     if (pcp < 5) {
-        spdlog::error("Invalid PCP code: {}", pcp);
+        spdlog::get("console")->error("Invalid PCP code: {}", pcp);
         return 0;
     }
     static std::random_device randomDevice;
