@@ -160,10 +160,7 @@ std::string Flow::toString(std::ostringstream &oss) {
         oss << "," << std::endl;
         oss << "\t" << R"("routes": {)";
         for (size_t i = 0; i < routes.size(); ++i) {
-            oss << std::endl << "\t\t\"route" << i << "\": \"" << routes[i].getLinks()[0].get().getSrcNode()->getName();
-            for (auto &j: routes[i].getLinks()) {
-                oss << " -> " << j.get().getDestNode()->getName();
-            }
+            oss << std::endl << "\t\t\"route" << i << "\": \"" << routes[i].toString();
             oss << "\",";
         }
         oss.seekp(-1, std::ios_base::end);
@@ -173,53 +170,6 @@ std::string Flow::toString(std::ostringstream &oss) {
     return oss.str();
 }
 
-uint32_t Flow::getHyperperiod() const {
-    return hyperperiod;
-}
-
-void Flow::setHyperperiod(uint32_t _hyperperiod) {
-    Flow::hyperperiod = _hyperperiod;
-}
-
-/**
- * @brief Calculate gate control list for every flows and check collision, the GCL is sorted by start time.
- * @return if the GCL has collision or not.
- * @retval  true:    GCL has no collision
- * @retval  false:   GCL has collision
- * */
-bool Flow::addGateControlEntry(std::mutex &gcl_lock) {
-    bool ret = true;
-    if (this->priorityCodePoint == P5 || this->priorityCodePoint == P6) {
-        uint32_t accumulatedDelay = this->offset;
-        uint32_t prop_delay = 0, trans_delay = 0, proc_delay = 0;
-        for (auto &link: routes[this->selectedRouteInx].getLinks()) {
-            /* Add gate control entity. */
-            proc_delay = link.get().getSrcNode()->getDpr();
-            trans_delay = this->frameLength * link.get().getSrcPort().getMacrotick();
-            accumulatedDelay += proc_delay;
-            /* Add gate control entity for every frame of flow in a hycperperiod */
-            uint32_t sendTimes = hyperperiod / period;
-            spdlog::set_level(spdlog::level::info);
-            spdlog::get("console")->debug("hyperperiod: {}, send {} times.", hyperperiod, sendTimes);
-            for (int i = 0; i < sendTimes; ++i) {
-                accumulatedDelay += offset + i * period;
-                GateControlEntry gateControlEntry;
-                gateControlEntry.setGateStatesValue(P6, GATE_OPEN);
-                gateControlEntry.setStartTime(accumulatedDelay);
-                gateControlEntry.setTimeIntervalValue(trans_delay);
-                link.get().addGateControlEntry(gateControlEntry, gcl_lock);
-            }
-            accumulatedDelay += trans_delay;
-            prop_delay = link.get().getLen() * link.get().getPropSpeed();
-            accumulatedDelay += prop_delay;
-            /* Sort the GCL of link */
-            link.get().sortGCL(gcl_lock);
-            /* Check collision */
-            ret = link.get().checkGCLCollision();
-        }
-    }
-    return ret;
-}
 
 /**
  * @brief Generate a period of frame in a flow. unit: ns

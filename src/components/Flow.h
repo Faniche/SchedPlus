@@ -6,8 +6,6 @@
 #define SCHEDPLUS_FLOW_H
 
 
-#include <uuid/uuid.h>
-#include <mutex>
 #include "NodeImpl.h"
 #include "Link.h"
 #include "../include/MyVlan.h"
@@ -54,8 +52,6 @@ private:
 //    std::vector<std::vector<DirectedLink *>> routes;
 
     uint16_t selectedRouteInx = 0;
-
-    uint32_t hyperperiod = 0;
 
     static const std::vector<uint8_t> randPeriod;
 
@@ -107,12 +103,6 @@ public:
     void setSelectedRouteInx(uint16_t selectedRouteInx);
 
     std::string toString(std::ostringstream &oss);
-
-    [[nodiscard]] uint32_t getHyperperiod() const;
-
-    bool addGateControlEntry(std::mutex &gcl_lock);
-
-    void setHyperperiod(uint32_t hyperperiod);
 
     static uint32_t getRandomPeriod(PRIORITY_CODE_POINT pcp);
 
