@@ -97,3 +97,13 @@ void Route::setE2E(uint32_t e2E) {
 void Route::addLink(DirectedLink &link) {
     links.emplace_back(link);
 }
+
+std::string Route::toString() const {
+    std::string route_str;
+    route_str.append(links[0].get().getSrcNode()->getName());
+    for (const auto &link: links) {
+        route_str.append(" -> ");
+        route_str.append(link.get().getDestNode()->getName());
+    }
+    return route_str;
+}

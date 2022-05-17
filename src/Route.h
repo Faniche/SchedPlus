@@ -55,6 +55,8 @@ public:
     [[nodiscard]] uint32_t getE2E() const;
 
     void setE2E(uint32_t e2E);
+
+    std::string toString() const;
 };
 
 
