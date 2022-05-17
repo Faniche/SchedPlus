@@ -232,8 +232,6 @@ void openGACal() {
         }
         std::sort(start, ++end, compareFlowWithPeriod);
     }
-//    std::vector<std::reference_wrapper<Flow>> wrapper_flows(flows.begin(), flows.end());
-//    uint32_t hyperPeriod = Util::getHyperPeriod(wrapper_flows, oss);
 
     MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/result.txt",
                          nodes, esList, swList, nodeMap, links, flows, flowGroup);
