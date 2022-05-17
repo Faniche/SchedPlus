@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.22)
 project(SchedPlus)
 set(CMAKE_CXX_STANDARD 20)
 add_executable(SchedPlus main.cpp
@@ -7,8 +7,14 @@ add_executable(SchedPlus main.cpp
         src/components/NodeImpl.cpp src/components/NodeImpl.h
         src/components/Link.cpp src/components/Link.h
         src/components/Flow.cpp src/components/Flow.h
-        src/include/MyVlan.h src/Route.cpp src/Route.h)
+        src/include/MyVlan.h src/Route.cpp src/Route.h
+        src/Delivery/DeliveryGuarantee.cpp src/Delivery/DeliveryGuarantee.h
+        lib/openGA.hpp
+        src/solutions/GA.h
+        src/solutions/GA_Solution.h
+        src/solutions/MyFunctions.h)
 
 target_link_libraries(SchedPlus
         uuid
-        spdlog)
+        spdlog
+        pthread)
