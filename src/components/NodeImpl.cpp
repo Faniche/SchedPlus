@@ -30,14 +30,14 @@ Switch::Switch(std::string name, uint32_t dpr): Node(std::move(name), SWITCH, dp
     }
 }
 
-Switch::Switch(std::string name, uint32_t dpr, uint8_t portNum) : Node(std::move(name), SWITCH, dpr), portNum(portNum) {
+Switch::Switch(std::string name, uint32_t dpr, uint32_t portNum) : Node(std::move(name), SWITCH, dpr), portNum(portNum) {
     for (int i = 0; i < portNum; ++i) {
         Port port;
         ports.push_back(port);
     }
 }
 
-uint8_t Switch::getPortNum() const {
+uint32_t Switch::getPortNum() const {
     return portNum;
 }
 

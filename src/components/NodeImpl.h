@@ -26,14 +26,14 @@ public:
 
 class Switch : public Node{
 private:
-    uint8_t portNum = 8;
+    uint32_t portNum = 8;
     std::vector<Port> ports;
 public:
     explicit Switch(std::string name, uint32_t dpr);
 
-    Switch(std::string name, uint32_t dpr, uint8_t portNum);
+    Switch(std::string name, uint32_t dpr, uint32_t portNum);
 
-    [[nodiscard]] uint8_t getPortNum() const;
+    [[nodiscard]] uint32_t getPortNum() const;
 
     [[nodiscard]] const std::vector<Port> &getPorts() const;
 
