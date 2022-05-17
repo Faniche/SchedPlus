@@ -105,14 +105,17 @@ public:
             uint32_t tmp = 0;
             for (int j = 1; j < idxRoute.size(); ++j) {
                 destIdx = idxRoute[j];
-                std::reference_wrapper<DirectedLink> link1 = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
+                DirectedLink* link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
+                if (link == nullptr) {
+                    spdlog::get("console")->error("Null pointer error.");
+                }
                 srcIdx = destIdx;
-                route.addLink(link1);
+                route.addLink(*link);
 //                route.links.push_back(link1);
                 /* Calculate the e2e latency except queue delay of flow. */
-                uint32_t trans_delay = flow.getFrameLength() * link1.get().getSrcPort().getMacrotick();
-                uint32_t proc_delay = link1.get().getSrcNode()->getDpr();
-                uint32_t prop_delay = link1.get().getLen() * link1.get().getPropSpeed();
+                uint32_t trans_delay = flow.getFrameLength() * link->getSrcPort().getMacrotick();
+                uint32_t proc_delay = link->getSrcNode()->getDpr();
+                uint32_t prop_delay = link->getLen() * link->getPropSpeed();
                 tmp += trans_delay + proc_delay + prop_delay;
             }
             route.setE2E(tmp);
