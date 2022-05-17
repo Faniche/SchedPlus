@@ -13,58 +13,117 @@
 #include "GA_Solution.h"
 #include "MyFunctions.h"
 
-static bool compareFlowWithPCP(const Flow &flow1, const Flow &flow2) {
+bool compareFlowWithPCP(const Flow &flow1, const Flow &flow2) {
     return flow1.getPriorityCodePoint() > flow2.getPriorityCodePoint();
 }
 
-static bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
+bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
     return flow1.getPeriod() < flow2.getPeriod();
 }
 
-static void openGACal() {
+void openGACal() {
     std::ostringstream oss;
     /* End systems */
-    Node *es0 = createNode(END_SYSTEM, "es0", 30000);
-    Node *es1 = createNode(END_SYSTEM, "es1", 30000);
-    Node *es2 = createNode(END_SYSTEM, "es2", 30000);
-    Node *es3 = createNode(END_SYSTEM, "es3", 30000);
-    Node *es4 = createNode(END_SYSTEM, "es4", 30000);
-    Node *es5 = createNode(END_SYSTEM, "es5", 30000);
-    Node *es6 = createNode(END_SYSTEM, "es6", 30000);
-    Node *es7 = createNode(END_SYSTEM, "es7", 30000);
+//    Node *es00 = createNode(END_SYSTEM, "es00", 30000);
+//    Node *es01 = createNode(END_SYSTEM, "es01", 30000);
+//    Node *es02 = createNode(END_SYSTEM, "es02", 30000);
+//    Node *es03 = createNode(END_SYSTEM, "es03", 30000);
+//    Node *es04 = createNode(END_SYSTEM, "es04", 30000);
+//    Node *es05 = createNode(END_SYSTEM, "es05", 30000);
+//    Node *es06 = createNode(END_SYSTEM, "es06", 30000);
+//    Node *es07 = createNode(END_SYSTEM, "es07", 30000);
+//    Node *es08 = createNode(END_SYSTEM, "es08", 30000);
+//    Node *es09 = createNode(END_SYSTEM, "es09", 30000);
+//    Node *es10 = createNode(END_SYSTEM, "es10", 30000);
+//    Node *es11 = createNode(END_SYSTEM, "es11", 30000);
+//    Node *es12 = createNode(END_SYSTEM, "es12", 30000);
+//    Node *es13 = createNode(END_SYSTEM, "es13", 30000);
+//    Node *es14 = createNode(END_SYSTEM, "es14", 30000);
+//    Node *es15 = createNode(END_SYSTEM, "es15", 30000);
+//    Node *es16 = createNode(END_SYSTEM, "es16", 30000);
+//    Node *es17 = createNode(END_SYSTEM, "es17", 30000);
+
+
+    Node *es00 = createNode(END_SYSTEM, "es00", 0);
+    Node *es01 = createNode(END_SYSTEM, "es01", 0);
+    Node *es02 = createNode(END_SYSTEM, "es02", 0);
+    Node *es03 = createNode(END_SYSTEM, "es03", 0);
+    Node *es04 = createNode(END_SYSTEM, "es04", 0);
+    Node *es05 = createNode(END_SYSTEM, "es05", 0);
+    Node *es06 = createNode(END_SYSTEM, "es06", 0);
+    Node *es07 = createNode(END_SYSTEM, "es07", 0);
+    Node *es08 = createNode(END_SYSTEM, "es08", 0);
+    Node *es09 = createNode(END_SYSTEM, "es09", 0);
+    Node *es10 = createNode(END_SYSTEM, "es10", 0);
+    Node *es11 = createNode(END_SYSTEM, "es11", 0);
+    Node *es12 = createNode(END_SYSTEM, "es12", 0);
+    Node *es13 = createNode(END_SYSTEM, "es13", 0);
+    Node *es14 = createNode(END_SYSTEM, "es14", 0);
+    Node *es15 = createNode(END_SYSTEM, "es15", 0);
+    Node *es16 = createNode(END_SYSTEM, "es16", 0);
+    Node *es17 = createNode(END_SYSTEM, "es17", 0);
+
+
     /* Switches */
     Node *sw0 = createNode(SWITCH, "sw0", 30000);
     Node *sw1 = createNode(SWITCH, "sw1", 30000);
     Node *sw2 = createNode(SWITCH, "sw2", 30000);
     Node *sw3 = createNode(SWITCH, "sw3", 30000);
     Node *sw4 = createNode(SWITCH, "sw4", 30000);
-    std::vector<Node *> nodes{es0, es1, es2, es3, es4, es5, es6, es7, sw0, sw1, sw2, sw3, sw4};
-    std::vector<Node *> esList{es0, es1, es2, es3, es4, es5, es6, es7};
-    std::vector<Node *> swList{sw0, sw1, sw2, sw3, sw4};
+    Node *sw5 = createNode(SWITCH, "sw5", 30000);
+    Node *sw6 = createNode(SWITCH, "sw6", 30000);
+    std::vector<Node *> nodes{es00, es01, es02, es03, es04, es05,
+                              es06, es07, es08, es09, es10, es11,
+                              es12, es13, es14, es15, es16, es17,
+                              sw0, sw1, sw2, sw3, sw4, sw5, sw6};
+    std::vector<Node *> esList{es00, es01, es02, es03, es04, es05,
+                               es06, es07, es08, es09, es10, es11,
+                               es12, es13, es14, es15, es16, es17};
+    std::vector<Node *> swList{sw0, sw1, sw2, sw3, sw4, sw5, sw6};
     std::map<node_idx , Node *> nodeMap;
     for (node_idx i = 0; i < nodes.size(); ++i) {
         nodeMap[i] = nodes[i];
     }
 
     /* Links connected end systems to switches */
-    FullDuplexLink link_00(es0, sw0, ((EndSystem *) es0)->getPort(), ((Switch *) sw0)->getPorts()[0]);
-    FullDuplexLink link_01(es1, sw0, ((EndSystem *) es1)->getPort(), ((Switch *) sw0)->getPorts()[1]);
-    FullDuplexLink link_02(es2, sw1, ((EndSystem *) es2)->getPort(), ((Switch *) sw1)->getPorts()[0]);
-    FullDuplexLink link_03(es3, sw1, ((EndSystem *) es3)->getPort(), ((Switch *) sw1)->getPorts()[1]);
-    FullDuplexLink link_04(es4, sw2, ((EndSystem *) es4)->getPort(), ((Switch *) sw2)->getPorts()[0]);
-    FullDuplexLink link_05(es5, sw2, ((EndSystem *) es5)->getPort(), ((Switch *) sw2)->getPorts()[1]);
-    FullDuplexLink link_06(es6, sw3, ((EndSystem *) es6)->getPort(), ((Switch *) sw3)->getPorts()[0]);
-    FullDuplexLink link_07(es7, sw3, ((EndSystem *) es7)->getPort(), ((Switch *) sw3)->getPorts()[1]);
-    /* Links connected four switches */
-    FullDuplexLink link_08(sw0, sw1, ((Switch *) sw0)->getPorts()[2], ((Switch *) sw1)->getPorts()[2]);
-    FullDuplexLink link_09(sw0, sw2, ((Switch *) sw0)->getPorts()[3], ((Switch *) sw2)->getPorts()[2]);
-    FullDuplexLink link_10(sw2, sw3, ((Switch *) sw2)->getPorts()[3], ((Switch *) sw3)->getPorts()[2]);
-    FullDuplexLink link_11(sw1, sw3, ((Switch *) sw1)->getPorts()[3], ((Switch *) sw3)->getPorts()[3]);
+    FullDuplexLink link_00(es00, sw0, ((EndSystem *) es00)->getPort(), ((Switch *) sw0)->getPorts()[0]);
+    FullDuplexLink link_01(es01, sw0, ((EndSystem *) es01)->getPort(), ((Switch *) sw0)->getPorts()[1]);
+    FullDuplexLink link_02(es02, sw0, ((EndSystem *) es02)->getPort(), ((Switch *) sw0)->getPorts()[2]);
 
-    FullDuplexLink link_12(sw0, sw4, ((Switch *) sw0)->getPorts()[4], ((Switch *) sw4)->getPorts()[0]);
-    FullDuplexLink link_13(sw1, sw4, ((Switch *) sw1)->getPorts()[4], ((Switch *) sw4)->getPorts()[1]);
-    FullDuplexLink link_14(sw2, sw4, ((Switch *) sw2)->getPorts()[4], ((Switch *) sw4)->getPorts()[2]);
-    FullDuplexLink link_15(sw3, sw4, ((Switch *) sw3)->getPorts()[4], ((Switch *) sw4)->getPorts()[3]);
+    FullDuplexLink link_03(es03, sw1, ((EndSystem *) es03)->getPort(), ((Switch *) sw1)->getPorts()[0]);
+    FullDuplexLink link_04(es04, sw1, ((EndSystem *) es04)->getPort(), ((Switch *) sw1)->getPorts()[1]);
+    FullDuplexLink link_05(es05, sw1, ((EndSystem *) es05)->getPort(), ((Switch *) sw1)->getPorts()[2]);
+
+    FullDuplexLink link_06(es06, sw2, ((EndSystem *) es06)->getPort(), ((Switch *) sw2)->getPorts()[0]);
+    FullDuplexLink link_07(es07, sw2, ((EndSystem *) es07)->getPort(), ((Switch *) sw2)->getPorts()[1]);
+    FullDuplexLink link_08(es08, sw2, ((EndSystem *) es08)->getPort(), ((Switch *) sw2)->getPorts()[2]);
+
+    FullDuplexLink link_09(es09, sw3, ((EndSystem *) es09)->getPort(), ((Switch *) sw3)->getPorts()[0]);
+    FullDuplexLink link_10(es10, sw3, ((EndSystem *) es10)->getPort(), ((Switch *) sw3)->getPorts()[1]);
+    FullDuplexLink link_11(es11, sw3, ((EndSystem *) es11)->getPort(), ((Switch *) sw3)->getPorts()[2]);
+
+    FullDuplexLink link_12(es12, sw4, ((EndSystem *) es12)->getPort(), ((Switch *) sw4)->getPorts()[0]);
+    FullDuplexLink link_13(es13, sw4, ((EndSystem *) es13)->getPort(), ((Switch *) sw4)->getPorts()[1]);
+    FullDuplexLink link_14(es14, sw4, ((EndSystem *) es14)->getPort(), ((Switch *) sw4)->getPorts()[2]);
+
+    FullDuplexLink link_15(es15, sw5, ((EndSystem *) es15)->getPort(), ((Switch *) sw5)->getPorts()[0]);
+    FullDuplexLink link_16(es16, sw5, ((EndSystem *) es16)->getPort(), ((Switch *) sw5)->getPorts()[1]);
+    FullDuplexLink link_17(es17, sw5, ((EndSystem *) es17)->getPort(), ((Switch *) sw5)->getPorts()[2]);
+
+    /* Links connected four switches */
+    FullDuplexLink link_18(sw0, sw6, ((Switch *) sw0)->getPorts()[3], ((Switch *) sw6)->getPorts()[0]);
+    FullDuplexLink link_19(sw1, sw6, ((Switch *) sw1)->getPorts()[3], ((Switch *) sw6)->getPorts()[1]);
+    FullDuplexLink link_20(sw2, sw6, ((Switch *) sw2)->getPorts()[3], ((Switch *) sw6)->getPorts()[2]);
+    FullDuplexLink link_21(sw3, sw6, ((Switch *) sw3)->getPorts()[3], ((Switch *) sw6)->getPorts()[3]);
+    FullDuplexLink link_22(sw4, sw6, ((Switch *) sw4)->getPorts()[3], ((Switch *) sw6)->getPorts()[4]);
+    FullDuplexLink link_23(sw5, sw6, ((Switch *) sw5)->getPorts()[3], ((Switch *) sw6)->getPorts()[5]);
+
+    FullDuplexLink link_24(sw0, sw1, ((Switch *) sw0)->getPorts()[4], ((Switch *) sw1)->getPorts()[5]);
+    FullDuplexLink link_25(sw1, sw2, ((Switch *) sw1)->getPorts()[4], ((Switch *) sw2)->getPorts()[5]);
+    FullDuplexLink link_26(sw2, sw3, ((Switch *) sw2)->getPorts()[4], ((Switch *) sw3)->getPorts()[5]);
+    FullDuplexLink link_27(sw3, sw4, ((Switch *) sw3)->getPorts()[4], ((Switch *) sw4)->getPorts()[5]);
+    FullDuplexLink link_28(sw4, sw5, ((Switch *) sw4)->getPorts()[4], ((Switch *) sw5)->getPorts()[5]);
+    FullDuplexLink link_29(sw5, sw0, ((Switch *) sw5)->getPorts()[4], ((Switch *) sw0)->getPorts()[5]);
 
     /* Add links to vectors */
     std::vector<DirectedLink> links{link_00.getLinks()[0], link_00.getLinks()[1],
@@ -82,7 +141,21 @@ static void openGACal() {
                                     link_12.getLinks()[0], link_12.getLinks()[1],
                                     link_13.getLinks()[0], link_13.getLinks()[1],
                                     link_14.getLinks()[0], link_14.getLinks()[1],
-                                    link_15.getLinks()[0], link_15.getLinks()[1]};
+                                    link_15.getLinks()[0], link_15.getLinks()[1],
+                                    link_16.getLinks()[0], link_16.getLinks()[1],
+                                    link_17.getLinks()[0], link_17.getLinks()[1],
+                                    link_18.getLinks()[0], link_18.getLinks()[1],
+                                    link_19.getLinks()[0], link_19.getLinks()[1],
+                                    link_20.getLinks()[0], link_20.getLinks()[1],
+                                    link_21.getLinks()[0], link_21.getLinks()[1],
+                                    link_22.getLinks()[0], link_22.getLinks()[1],
+                                    link_23.getLinks()[0], link_23.getLinks()[1],
+                                    link_24.getLinks()[0], link_24.getLinks()[1],
+                                    link_25.getLinks()[0], link_25.getLinks()[1],
+                                    link_26.getLinks()[0], link_26.getLinks()[1],
+                                    link_27.getLinks()[0], link_27.getLinks()[1],
+                                    link_28.getLinks()[0], link_28.getLinks()[1],
+                                    link_29.getLinks()[0], link_29.getLinks()[1]};
     for (uint32_t i = 0; i < links.size(); ++i) {
         links[i].setId(i);
     }
@@ -96,7 +169,7 @@ static void openGACal() {
 
     /* The set of flows */
     std::vector<Flow> flows;
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 12; ++i) {
         node_idx a, b;
         do {
             a = util.getRandESIdx(esList);
@@ -126,7 +199,7 @@ static void openGACal() {
         flows.push_back(flow);
         oss.str("");
         flow.toString(oss);
-        spdlog::info("flow_{}: {}", i, oss.str());
+        spdlog::get("console")->info("flow_{}: {}", i, oss.str());
     }
     std::map<node_idx, std::vector<std::reference_wrapper<Flow>>> flowGroup;
     /* Group the flow with src */
@@ -134,34 +207,21 @@ static void openGACal() {
         node_idx key = Node::nodeToIdx(nodeMap, flow.getSrc());
         flowGroup[key].emplace_back(flow);
     }
+//    for (auto &[src_id, flows_wrap]: flowGroup) {
+//        uint32_t hyperperiod = Util::getHyperPeriod(flows_wrap, oss);
+//        for (auto &flow: flows_wrap) {
+//            flow.get().setHyperperiod(hyperperiod);
+//        }
+//        spdlog::get("console")->info("src: {}, hyperperiod: {}", nodeMap[src_id]->getName(), hyperperiod);
+//    }
     /* Sort the flow with PCP */
     spdlog::set_level(spdlog::level::info);
     for (auto &[src, _flows]: flowGroup) {
-//            oss.str("");
-//            std::for_each(_flows.begin(), _flows.end(),
-//                          [&](std::reference_wrapper<Flow> flow) {
-//                              oss << flow.get().getPriorityCodePoint() << " ";
-//                          });
-        spdlog::debug("Before sorting: {}", oss.str());
-//            oss.str("");
         std::sort(_flows.begin(), _flows.end(), compareFlowWithPCP);
-//            std::for_each(_flows.begin(), _flows.end(),
-//                          [&](std::reference_wrapper<Flow> flow) {
-//                              oss << flow.get().getPriorityCodePoint() << " ";
-//                          });
-        spdlog::debug("After sorting: {}", oss.str());
     }
-    spdlog::debug("Group the flow with pcp:{}", oss.str());
+    spdlog::get("console")->debug("Group the flow with pcp:{}", oss.str());
     /* Sort the flow with period on every source node */
     for (auto &[src, _flows]: flowGroup) {
-//            oss.str("");
-//            spdlog::debug("src idx: {}", src);
-//            std::for_each(_flows.begin(), _flows.end(),
-//                          [&](std::reference_wrapper<Flow> flow) {
-//                              oss << flow.get().getPeriod() << " ";
-//                          });
-        spdlog::debug("Before sorting: {}", oss.str());
-//            oss.str("");
         auto start = _flows.begin();
         auto end = _flows.begin();
         for (; end != _flows.end().operator-(1); ++end) {
@@ -171,15 +231,9 @@ static void openGACal() {
             }
         }
         std::sort(start, ++end, compareFlowWithPeriod);
-//            std::for_each(_flows.begin(), _flows.end(),
-//                          [&](std::reference_wrapper<Flow> flow) {
-//                              oss << flow.get().getPeriod() << " ";
-//                          });
-        spdlog::debug("After sorting: {}", oss.str());
     }
-
 //    std::vector<std::reference_wrapper<Flow>> wrapper_flows(flows.begin(), flows.end());
-    uint32_t hyperPeriod = Util::getHyperPeriod(flows, oss);
+//    uint32_t hyperPeriod = Util::getHyperPeriod(wrapper_flows, oss);
 
     MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/result.txt",
                          nodes, esList, swList, nodeMap, links, flows, flowGroup);
@@ -189,13 +243,12 @@ static void openGACal() {
 
     GA_Type ga_obj;
     ga_obj.problem_mode = EA::GA_MODE::NSGA_III;
-    ga_obj.multi_threading = true;
+    ga_obj.multi_threading = false;
 //    ga_obj.idle_delay_us = 1; // switch between threads quickly
-    ga_obj.dynamic_threading = true;
-    ga_obj.verbose = false;
-    ga_obj.population = 100;
+    ga_obj.dynamic_threading = false;
+    ga_obj.verbose = true;
+    ga_obj.population = 20;
     ga_obj.generation_max = 100;
-
 
     using std::bind;
     using std::placeholders::_1;
@@ -214,8 +267,7 @@ static void openGACal() {
     ga_obj.solve();
 
     std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
-
-    myobject.save_results(ga_obj);
+    myobject.save_results(ga_obj, "/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small");
 
 }
 
