@@ -42,9 +42,11 @@ public:
 
     [[nodiscard]] const Port &getSrcPort() const;
 
-    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
+    void addGateControlEntry(const GateControlEntry &gateControlEntry);
 
-    void sortGCL(std::mutex &gcl_lock);
+    void clearGateControlEntry();
+
+    void sortGCL();
 
     bool checkGCLCollision();
 
@@ -60,7 +62,7 @@ public:
 
     void setPropSpeed(uint16_t propSpeed);
 
-    static std::reference_wrapper<DirectedLink> nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
+    static DirectedLink* nodesIdxToLink(const Node *_srcNode, const Node *_destNode, std::vector<DirectedLink> &links);
 };
 
 class FullDuplexLink {
