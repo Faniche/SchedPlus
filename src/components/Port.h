@@ -35,6 +35,8 @@ public:
     [[nodiscard]] uint32_t getTimeIntervalValue() const;
 
     void setTimeIntervalValue(uint32_t timeIntervalValue);
+
+    const std::string toBitVec() const;
 };
 
 
@@ -71,11 +73,15 @@ public:
 
     [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
 
-    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
+//    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
+
+    void addGateControlEntry(const GateControlEntry &gateControlEntry);
+
+    void clearGCL();
 
     static bool compareGCL(const GateControlEntry & a, const GateControlEntry &b);
 
-    void sortGCL(std::mutex &gcl_lock);
+    void sortGCL();
 
     bool checkGCLCollision();
 
@@ -90,6 +96,7 @@ public:
     [[nodiscard]] const std::vector<uint32_t> &getFrameQueue() const;
 
     void setFrameQueue(const std::vector<uint32_t> &frameQueue);
+
 };
 
 

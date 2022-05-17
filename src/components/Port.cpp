@@ -5,8 +5,7 @@
 #include "Port.h"
 
 GateControlEntry::GateControlEntry() {
-    std::vector<bool> tmp(8, GATE_CLOSE);
-    gateStatesValue = tmp;
+    gateStatesValue.assign(8, GATE_OPEN);
     timeIntervalValue = 0;
 }
 
@@ -33,6 +32,18 @@ uint32_t GateControlEntry::getTimeIntervalValue() const {
 
 void GateControlEntry::setTimeIntervalValue(uint32_t _timeIntervalValue) {
     GateControlEntry::timeIntervalValue = _timeIntervalValue;
+}
+
+const std::string GateControlEntry::toBitVec() const {
+    std::string bitvector_str;
+    for (auto const &gate_event: gateStatesValue) {
+        if (gate_event == GATE_OPEN)
+            bitvector_str.append("1");
+        else
+            bitvector_str.append("0");
+    }
+    std::reverse(bitvector_str.begin(), bitvector_str.end());
+    return bitvector_str;
 }
 
 /* Impl of Port*/
@@ -65,20 +76,20 @@ const std::vector<GateControlEntry> &Port::getGateControlList() const {
     return gateControlList;
 }
 
-void Port::addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock) {
-    gcl_lock.lock();
+void Port::addGateControlEntry(const GateControlEntry &gateControlEntry) {
     gateControlList.push_back(gateControlEntry);
-    gcl_lock.unlock();
+}
+
+void Port::clearGCL() {
+    gateControlList.shrink_to_fit();
 }
 
 bool Port::compareGCL(const GateControlEntry & a, const GateControlEntry &b){
     return a.getStartTime() < b.getStartTime();
 }
 
-void Port::sortGCL(std::mutex &gcl_lock) {
-    gcl_lock.lock();
+void Port::sortGCL() {
     std::sort(gateControlList.begin(), gateControlList.end(), compareGCL);
-    gcl_lock.unlock();
 }
 
 bool Port::checkGCLCollision() {
