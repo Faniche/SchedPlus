@@ -384,6 +384,7 @@ NS_EA_BEGIN ;
 
             thisGenerationType generation0;
             init_population(generation0);
+            cout << "Init totally totally taken: " << timer.toc() << " seconds." << endl;
 
             generation_step = 0;
             finalize_objectives(generation0);
@@ -1173,11 +1174,11 @@ NS_EA_BEGIN ;
                     init_genes(X.genes, [this]() { return random01(); });
                     accepted = init_population_try(*p_generation0, X, index);
                     (*attemps)++;
-                    if (*attemps % 1000 == 0) {
-                        spdlog::get("console")->debug("Population {} has tried to init for {} times.", index, *attemps);
-                    }
+//                    if (*attemps % 1000 == 0) {
+//                        spdlog::get("console")->info("Population {} has tried to init for {} times.", index, *attemps);
+//                    }
                 }
-                spdlog::get("console")->debug("Population {} has been inited after {} times init operation.", index, *attemps);
+                spdlog::get("console")->info("Population {} has been inited after {} times init operation.", index, *attemps);
                 active_thread = false;
             }
         }
@@ -1447,7 +1448,7 @@ NS_EA_BEGIN ;
                     X.genes = crossover(Xp1, Xp2, [this]() { return random01(); });
                     if (random01() <= mutation_rate) {
                         if (verbose)
-                            cout << "Mutation of chromosome " << endl;
+                            cout << "Mutation of chromosome " << generation_step << endl;
                         double shrink_scale = get_shrink_scale(generation_step, [this]() { return random01(); });
                         X.genes = mutate(X.genes, [this]() { return random01(); }, shrink_scale);
                     }
