@@ -12,21 +12,16 @@
 struct TTFlows {
     std::vector<uint32_t> offsets;
     std::vector<uint32_t> selected_route_idx;
-    std::map<uint32_t, std::vector<std::pair<uint32_t , uint32_t >>> transmit_intervals;
-    std::string to_string(std::ostringstream &oss) const {
-        oss << "{" << offsets[0];
-        for (int i = 1; i < offsets.size(); ++i) {
-            oss << ", " << offsets[i];
-        };
-        oss << "}";
-        return oss.str();
-    }
 };
 
 struct MyMiddleCost {
     // This is where the results of simulation
     // is stored but not yet finalized.
-    std::vector<uint32_t> delivery_guarantees;
+
+    //       link_id                          start     interval
+    std::map<uint32_t, std::vector<std::pair<uint32_t , uint32_t>>> transmit_intervals;
+    // the minimum variance of generation
+    double variance = 0;
 
     double e2e;
 
