@@ -13,14 +13,6 @@
 #include "GA_Solution.h"
 #include "MyFunctions.h"
 
-bool compareFlowWithPCP(const Flow &flow1, const Flow &flow2) {
-    return flow1.getPriorityCodePoint() > flow2.getPriorityCodePoint();
-}
-
-bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
-    return flow1.getPeriod() < flow2.getPeriod();
-}
-
 void openGACal() {
     std::ostringstream oss;
     /* End systems */
@@ -45,13 +37,13 @@ void openGACal() {
 
 
     /* Switches */
-    Node *sw0 = createNode(SWITCH, "sw0", 30000);
-    Node *sw1 = createNode(SWITCH, "sw1", 30000);
-    Node *sw2 = createNode(SWITCH, "sw2", 30000);
-    Node *sw3 = createNode(SWITCH, "sw3", 30000);
-    Node *sw4 = createNode(SWITCH, "sw4", 30000);
-    Node *sw5 = createNode(SWITCH, "sw5", 30000);
-    Node *sw6 = createNode(SWITCH, "sw6", 30000);
+    Node *sw0 = createNode(SWITCH, "switch0", 30000);
+    Node *sw1 = createNode(SWITCH, "switch1", 30000);
+    Node *sw2 = createNode(SWITCH, "switch2", 30000);
+    Node *sw3 = createNode(SWITCH, "switch3", 30000);
+    Node *sw4 = createNode(SWITCH, "switch4", 30000);
+    Node *sw5 = createNode(SWITCH, "switch5", 30000);
+    Node *sw6 = createNode(SWITCH, "switch6", 30000);
     std::vector<Node *> nodes{es00, es01, es02, es03, es04, es05,
                               es06, es07, es08, es09, es10, es11,
                               es12, es13, es14, es15, es16, es17,
@@ -149,7 +141,7 @@ void openGACal() {
 
     /* The set of flows */
     std::vector<Flow> flows;
-    for (int i = 1; i <= 12; ++i) {
+    for (int i = 1; i <= 24; ++i) {
         node_idx a, b;
         do {
             a = util.getRandESIdx(esList);
@@ -191,7 +183,7 @@ void openGACal() {
     /* Sort the flow with PCP */
     spdlog::set_level(spdlog::level::info);
     for (auto &[src, _flows]: flowGroup) {
-        std::sort(_flows.begin(), _flows.end(), compareFlowWithPCP);
+        std::sort(_flows.begin(), _flows.end(), Util::compareFlowWithPCP);
     }
     spdlog::get("console")->debug("Group the flow with pcp:{}", oss.str());
     /* Sort the flow with period on every source node */
@@ -200,11 +192,11 @@ void openGACal() {
         auto end = _flows.begin();
         for (; end != _flows.end().operator-(1); ++end) {
             if (end->get().getPriorityCodePoint() != (end.operator+(1))->get().getPriorityCodePoint()) {
-                std::sort(start, end.operator+(1), compareFlowWithPeriod);
+                std::sort(start, end.operator+(1), Util::compareFlowWithPeriod);
                 start = end.operator+(1);
             }
         }
-        std::sort(start, ++end, compareFlowWithPeriod);
+        std::sort(start, ++end, Util::compareFlowWithPeriod);
     }
 
     MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/result.txt",
@@ -215,9 +207,9 @@ void openGACal() {
 
     GA_Type ga_obj;
     ga_obj.problem_mode = EA::GA_MODE::NSGA_III;
-    ga_obj.multi_threading = false;
+    ga_obj.multi_threading = true;
 //    ga_obj.idle_delay_us = 1; // switch between threads quickly
-    ga_obj.dynamic_threading = false;
+    ga_obj.dynamic_threading = true;
     ga_obj.verbose = true;
     ga_obj.population = 20;
     ga_obj.generation_max = 100;
