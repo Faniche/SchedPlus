@@ -10,8 +10,8 @@
 #include "../../lib/openGA.hpp"
 
 struct TTFlows {
-    std::vector<uint32_t> offsets;
-    std::vector<uint32_t> selected_route_idx;
+    std::vector<uint64_t> offsets;
+    std::vector<uint64_t> selected_route_idx;
 };
 
 struct MyMiddleCost {
@@ -19,7 +19,7 @@ struct MyMiddleCost {
     // is stored but not yet finalized.
 
     //       link_id                          start     interval
-    std::map<uint32_t, std::vector<std::pair<uint32_t , uint32_t>>> transmit_intervals;
+    std::map<uint32_t , std::vector<std::pair<uint64_t , uint64_t>>> transmit_intervals;
     // the minimum variance of generation
     double variance = 0;
 
