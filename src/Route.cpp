@@ -86,11 +86,11 @@ const std::vector<std::reference_wrapper<DirectedLink>> &Route::getLinks() const
     return links;
 }
 
-uint32_t Route::getE2E() const {
+uint64_t Route::getE2E() const {
     return e2e;
 }
 
-void Route::setE2E(uint32_t e2E) {
+void Route::setE2E(uint64_t e2E) {
     e2e = e2E;
 }
 

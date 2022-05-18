@@ -18,8 +18,8 @@ class GateControlEntry {
 private:
     std::vector<GATE_EVENT> gateStatesValue;
 //    std::atomic<std::vector<GATE_EVENT>> gateStatesValue;
-    uint32_t startTime;
-    uint32_t timeIntervalValue;
+    uint64_t startTime;
+    uint64_t timeIntervalValue;
 
 public:
     GateControlEntry();
@@ -28,15 +28,15 @@ public:
 
     void setGateStatesValue(uint8_t idx, GATE_EVENT gateState);
 
-    [[nodiscard]] uint32_t getStartTime() const;
+    [[nodiscard]] uint64_t getStartTime() const;
 
-    void setStartTime(uint32_t startTime);
+    void setStartTime(uint64_t startTime);
 
-    [[nodiscard]] uint32_t getTimeIntervalValue() const;
+    [[nodiscard]] uint64_t getTimeIntervalValue() const;
 
-    void setTimeIntervalValue(uint32_t timeIntervalValue);
+    void setTimeIntervalValue(uint64_t timeIntervalValue);
 
-    const std::string toBitVec() const;
+    std::string toBitVec() const;
 };
 
 
@@ -53,12 +53,12 @@ private:
     std::vector<GateControlEntry> gateControlList;
 
     /* the bytes of cached frame in queue with priority 5 and 6 */
-    uint32_t qsize = 0;
+    uint64_t qsize = 0;
 
     /* the num of cached frame in queue with priority 5 and 6 */
     uint16_t qlen = 0;
 
-    std::vector<uint32_t> frameQueue;
+    std::vector<uint64_t> frameQueue;
 
 public:
     Port();
@@ -73,8 +73,6 @@ public:
 
     [[nodiscard]] const std::vector<GateControlEntry> &getGateControlList() const;
 
-//    void addGateControlEntry(const GateControlEntry &gateControlEntry, std::mutex &gcl_lock);
-
     void addGateControlEntry(const GateControlEntry &gateControlEntry);
 
     void clearGCL();
@@ -85,17 +83,17 @@ public:
 
     bool checkGCLCollision();
 
-    [[nodiscard]] uint32_t getQsize() const;
+    [[nodiscard]] uint64_t getQsize() const;
 
-    void setQsize(uint32_t qsize);
+    void setQsize(uint64_t qsize);
 
     [[nodiscard]] uint16_t getQlen() const;
 
     void setQlen(uint16_t qlen);
 
-    [[nodiscard]] const std::vector<uint32_t> &getFrameQueue() const;
+    [[nodiscard]] const std::vector<uint64_t> &getFrameQueue() const;
 
-    void setFrameQueue(const std::vector<uint32_t> &frameQueue);
+    void setFrameQueue(const std::vector<uint64_t> &frameQueue);
 
 };
 

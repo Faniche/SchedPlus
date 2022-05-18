@@ -24,26 +24,6 @@ bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
 void openGACal() {
     std::ostringstream oss;
     /* End systems */
-//    Node *es00 = createNode(END_SYSTEM, "es00", 30000);
-//    Node *es01 = createNode(END_SYSTEM, "es01", 30000);
-//    Node *es02 = createNode(END_SYSTEM, "es02", 30000);
-//    Node *es03 = createNode(END_SYSTEM, "es03", 30000);
-//    Node *es04 = createNode(END_SYSTEM, "es04", 30000);
-//    Node *es05 = createNode(END_SYSTEM, "es05", 30000);
-//    Node *es06 = createNode(END_SYSTEM, "es06", 30000);
-//    Node *es07 = createNode(END_SYSTEM, "es07", 30000);
-//    Node *es08 = createNode(END_SYSTEM, "es08", 30000);
-//    Node *es09 = createNode(END_SYSTEM, "es09", 30000);
-//    Node *es10 = createNode(END_SYSTEM, "es10", 30000);
-//    Node *es11 = createNode(END_SYSTEM, "es11", 30000);
-//    Node *es12 = createNode(END_SYSTEM, "es12", 30000);
-//    Node *es13 = createNode(END_SYSTEM, "es13", 30000);
-//    Node *es14 = createNode(END_SYSTEM, "es14", 30000);
-//    Node *es15 = createNode(END_SYSTEM, "es15", 30000);
-//    Node *es16 = createNode(END_SYSTEM, "es16", 30000);
-//    Node *es17 = createNode(END_SYSTEM, "es17", 30000);
-
-
     Node *es00 = createNode(END_SYSTEM, "es00", 0);
     Node *es01 = createNode(END_SYSTEM, "es01", 0);
     Node *es02 = createNode(END_SYSTEM, "es02", 0);
@@ -169,7 +149,7 @@ void openGACal() {
 
     /* The set of flows */
     std::vector<Flow> flows;
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 1; i <= 12; ++i) {
         node_idx a, b;
         do {
             a = util.getRandESIdx(esList);
@@ -207,13 +187,7 @@ void openGACal() {
         node_idx key = Node::nodeToIdx(nodeMap, flow.getSrc());
         flowGroup[key].emplace_back(flow);
     }
-//    for (auto &[src_id, flows_wrap]: flowGroup) {
-//        uint32_t hyperperiod = Util::getHyperPeriod(flows_wrap, oss);
-//        for (auto &flow: flows_wrap) {
-//            flow.get().setHyperperiod(hyperperiod);
-//        }
-//        spdlog::get("console")->info("src: {}, hyperperiod: {}", nodeMap[src_id]->getName(), hyperperiod);
-//    }
+
     /* Sort the flow with PCP */
     spdlog::set_level(spdlog::level::info);
     for (auto &[src, _flows]: flowGroup) {

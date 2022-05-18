@@ -22,10 +22,10 @@ protected:
     std::string name;
     NODE_TYPE nodeType;
     /* the process delay of node: ns*/
-    uint32_t dpr;
+    uint64_t dpr;
 
 public:
-    Node(std::string name, NODE_TYPE _nodeType, uint32_t _dpr);
+    Node(std::string name, NODE_TYPE _nodeType, uint64_t _dpr);
 
     virtual ~Node();
 
@@ -41,11 +41,11 @@ public:
 
     static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
 
-    [[nodiscard]] uint32_t getDpr() const;
+    [[nodiscard]] uint64_t getDpr() const;
 
-    void setDpr(uint32_t dpr);
+    void setDpr(uint64_t dpr);
 };
 
-Node *createNode(NODE_TYPE nodeType, const std::string& name, uint32_t dpr);
+Node *createNode(NODE_TYPE nodeType, const std::string& name, uint64_t dpr);
 
 #endif //SCHEDPLUS_NODE_H

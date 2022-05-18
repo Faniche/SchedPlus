@@ -102,7 +102,7 @@ public:
         for (auto &idxRoute: routes) {
             srcIdx = idxRoute[0];
             Route route;
-            uint32_t tmp = 0;
+            uint64_t tmp = 0;
             for (int j = 1; j < idxRoute.size(); ++j) {
                 destIdx = idxRoute[j];
                 DirectedLink* link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
@@ -113,9 +113,9 @@ public:
                 route.addLink(*link);
 //                route.links.push_back(link1);
                 /* Calculate the e2e latency except queue delay of flow. */
-                uint32_t trans_delay = flow.getFrameLength() * link->getSrcPort().getMacrotick();
-                uint32_t proc_delay = link->getSrcNode()->getDpr();
-                uint32_t prop_delay = link->getLen() * link->getPropSpeed();
+                uint64_t trans_delay = flow.getFrameLength() * link->getSrcPort().getMacrotick();
+                uint64_t proc_delay = link->getSrcNode()->getDpr();
+                uint64_t prop_delay = link->getLen() * link->getPropSpeed();
                 tmp += trans_delay + proc_delay + prop_delay;
             }
             route.setE2E(tmp);

@@ -15,7 +15,7 @@ class EndSystem : public Node {
 private:
     Port port;
 public:
-    explicit EndSystem(std::string name, uint32_t dpr);
+    explicit EndSystem(std::string name, uint64_t dpr);
 
     [[nodiscard]] const Port &getPort() const;
 
@@ -29,9 +29,9 @@ private:
     uint32_t portNum = 8;
     std::vector<Port> ports;
 public:
-    explicit Switch(std::string name, uint32_t dpr);
+    explicit Switch(std::string name, uint64_t dpr);
 
-    Switch(std::string name, uint32_t dpr, uint32_t portNum);
+    Switch(std::string name, uint64_t dpr, uint32_t portNum);
 
     [[nodiscard]] uint32_t getPortNum() const;
 

@@ -19,7 +19,7 @@ const std::vector<uint8_t> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16,
  * @param rep                   The replication of the frame, default 1
  * @param multicast             The flow is multicast of not
  */
-Flow::Flow(uint32_t _id, uint32_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
+Flow::Flow(uint32_t _id, uint64_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
            bool isCritical, uint8_t rep, bool multicast)
         : id(_id),
           period(period),
@@ -33,15 +33,15 @@ Flow::Flow(uint32_t _id, uint32_t period, PRIORITY_CODE_POINT priorityCodePoint,
 //    deliveryGuarantees.emplace_back(deliveryGuarantee);
 }
 
-uint32_t Flow::getId() const {
+uint64_t Flow::getId() const {
     return id;
 }
 
-uint32_t Flow::getOffset() const {
+uint64_t Flow::getOffset() const {
     return offset;
 }
 
-void Flow::setOffset(uint32_t _offset) {
+void Flow::setOffset(uint64_t _offset) {
     Flow::offset = _offset;
 }
 
@@ -49,7 +49,7 @@ void Flow::setOffset(uint32_t _offset) {
  * @brief return period of flow, unit: ns
  * @return flow period: ns
  **/
-uint32_t Flow::getPeriod() const {
+uint64_t Flow::getPeriod() const {
     return period;
 }
 
@@ -85,11 +85,11 @@ void Flow::setDeliveryGuarantee() {
     }
 }
 
-uint32_t Flow::getQueueDelay() const {
+uint64_t Flow::getQueueDelay() const {
     return queueDelay;
 }
 
-void Flow::setQueueDelay(uint32_t _queueDelay) {
+void Flow::setQueueDelay(uint64_t _queueDelay) {
     Flow::queueDelay = _queueDelay;
 }
 
@@ -175,7 +175,7 @@ std::string Flow::toString(std::ostringstream &oss) {
  * @brief Generate a period of frame in a flow. unit: ns
  * @retval uint32_t
  */
-uint32_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
+uint64_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     if (pcp < 5) {
         spdlog::get("console")->error("Invalid PCP code: {}", pcp);
         return 0;
@@ -184,7 +184,7 @@ uint32_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     static std::default_random_engine engine(randomDevice());
     static std::uniform_int_distribution<uint8_t> randFramePeriod(0, randPeriod.size() - 1);
     uint8_t idx = randFramePeriod(engine);
-    uint32_t a = randPeriod[idx];
+    uint64_t a = randPeriod[idx];
     switch (pcp) {
         case P5:
             // 5                Cyclic                  2ms-20ms

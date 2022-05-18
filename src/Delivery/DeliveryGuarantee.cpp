@@ -4,9 +4,9 @@
 
 #include "DeliveryGuarantee.h"
 
-DeliveryGuarantee::DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal) : type(type), lower_val(lowerVal) {}
+DeliveryGuarantee::DeliveryGuarantee(DELIVERY_GUARANTEE type, uint64_t lowerVal) : type(type), lower_val(lowerVal) {}
 
-DeliveryGuarantee::DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal, uint32_t upperVal) : type(type),
+DeliveryGuarantee::DeliveryGuarantee(DELIVERY_GUARANTEE type, uint64_t lowerVal, uint64_t upperVal) : type(type),
                                                                                             lower_val(lowerVal),
                                                                                             upper_val(upperVal) {}
 
@@ -14,34 +14,34 @@ DELIVERY_GUARANTEE DeliveryGuarantee::getType() const {
     return type;
 }
 
-uint32_t DeliveryGuarantee::getLowerVal() const {
+uint64_t DeliveryGuarantee::getLowerVal() const {
     return lower_val;
 }
 
-void DeliveryGuarantee::setLowerVal(uint32_t lowerVal) {
+void DeliveryGuarantee::setLowerVal(uint64_t lowerVal) {
     lower_val = lowerVal;
 }
 
-uint32_t DeliveryGuarantee::getUpperVal() const {
+uint64_t DeliveryGuarantee::getUpperVal() const {
     return upper_val;
 }
 
-void DeliveryGuarantee::setUpperVal(uint32_t upperVal) {
+void DeliveryGuarantee::setUpperVal(uint64_t upperVal) {
     upper_val = upperVal;
 }
 
-uint32_t DeliveryGuarantee::getLoverObj() const {
+uint64_t DeliveryGuarantee::getLoverObj() const {
     return lover_obj;
 }
 
-void DeliveryGuarantee::setLoverObj(uint32_t loverObj) {
+void DeliveryGuarantee::setLoverObj(uint64_t loverObj) {
     lover_obj = loverObj;
 }
 
-uint32_t DeliveryGuarantee::getUpperObj() const {
+uint64_t DeliveryGuarantee::getUpperObj() const {
     return upper_obj;
 }
 
-void DeliveryGuarantee::setUpperObj(uint32_t upperObj) {
+void DeliveryGuarantee::setUpperObj(uint64_t upperObj) {
     upper_obj = upperObj;
 }

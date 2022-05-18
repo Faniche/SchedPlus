@@ -17,12 +17,12 @@ private:
     uint32_t id;
 
     /* The sending offset in a hyperperiod of each frame */
-    uint32_t offset = 0;
+    uint64_t offset = 0;
 
     /* The interval between two frames of a Flow */
-    uint32_t period = 0;
+    uint64_t period = 0;
 
-    uint32_t queueDelay = 0;
+    uint64_t queueDelay = 0;
 
     /* The frame length include network headers of a packet of each frame */
     uint16_t frameLength = 0;
@@ -56,15 +56,15 @@ private:
     static const std::vector<uint8_t> randPeriod;
 
 public:
-    Flow(uint32_t _id, uint32_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
+    Flow(uint32_t _id, uint64_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
 
-    [[nodiscard]] uint32_t getId() const;
+    [[nodiscard]] uint64_t getId() const;
 
-    [[nodiscard]] uint32_t getOffset() const;
+    [[nodiscard]] uint64_t getOffset() const;
 
-    void setOffset(uint32_t offset);
+    void setOffset(uint64_t offset);
 
-    [[nodiscard]] uint32_t getPeriod() const;
+    [[nodiscard]] uint64_t getPeriod() const;
 
     [[nodiscard]] const std::vector<DeliveryGuarantee> &getDeliveryGuarantees() const;
 
@@ -74,9 +74,9 @@ public:
 
     void setDeliveryGuarantee();
 
-    [[nodiscard]] uint32_t getQueueDelay() const;
+    [[nodiscard]] uint64_t getQueueDelay() const;
 
-    void setQueueDelay(uint32_t queueDelay);
+    void setQueueDelay(uint64_t queueDelay);
 
     [[nodiscard]] uint16_t getFrameLength() const;
 
@@ -104,7 +104,7 @@ public:
 
     std::string toString(std::ostringstream &oss);
 
-    static uint32_t getRandomPeriod(PRIORITY_CODE_POINT pcp);
+    static uint64_t getRandomPeriod(PRIORITY_CODE_POINT pcp);
 
     static uint16_t getRandomFrameLength(PRIORITY_CODE_POINT pcp);
 

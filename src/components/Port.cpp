@@ -18,23 +18,23 @@ void GateControlEntry::setGateStatesValue(uint8_t idx, GATE_EVENT gateState) {
     gateStatesValue[idx] = gateState;
 }
 
-uint32_t GateControlEntry::getStartTime() const {
+uint64_t GateControlEntry::getStartTime() const {
     return startTime;
 }
 
-void GateControlEntry::setStartTime(uint32_t _startTime) {
+void GateControlEntry::setStartTime(uint64_t _startTime) {
     GateControlEntry::startTime = _startTime;
 }
 
-uint32_t GateControlEntry::getTimeIntervalValue() const {
+uint64_t GateControlEntry::getTimeIntervalValue() const {
     return timeIntervalValue;
 }
 
-void GateControlEntry::setTimeIntervalValue(uint32_t _timeIntervalValue) {
+void GateControlEntry::setTimeIntervalValue(uint64_t _timeIntervalValue) {
     GateControlEntry::timeIntervalValue = _timeIntervalValue;
 }
 
-const std::string GateControlEntry::toBitVec() const {
+std::string GateControlEntry::toBitVec() const {
     std::string bitvector_str;
     for (auto const &gate_event: gateStatesValue) {
         if (gate_event == GATE_OPEN)
@@ -100,11 +100,11 @@ bool Port::checkGCLCollision() {
     return true;
 }
 
-uint32_t Port::getQsize() const {
+uint64_t Port::getQsize() const {
     return qsize;
 }
 
-void Port::setQsize(uint32_t _qsize) {
+void Port::setQsize(uint64_t _qsize) {
     Port::qsize = _qsize;
 }
 
@@ -116,10 +116,10 @@ void Port::setQlen(uint16_t _qlen) {
     Port::qlen = _qlen;
 }
 
-const std::vector<uint32_t> &Port::getFrameQueue() const {
+const std::vector<uint64_t> &Port::getFrameQueue() const {
     return frameQueue;
 }
 
-void Port::setFrameQueue(const std::vector<uint32_t> &_frameQueue) {
+void Port::setFrameQueue(const std::vector<uint64_t> &_frameQueue) {
     Port::frameQueue = _frameQueue;
 }

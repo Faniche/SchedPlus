@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-//typedef uint32_t ;
+//typedef uint64_t ;
 enum DELIVERY_GUARANTEE {
     BANDWIDTH,
     DDL,
@@ -20,32 +20,32 @@ enum DELIVERY_GUARANTEE {
 class DeliveryGuarantee {
 private:
     DELIVERY_GUARANTEE type;
-    uint32_t lower_val = 0;
-    uint32_t upper_val = 0;
-    uint32_t lover_obj = 0;
-    uint32_t upper_obj = 0;
+    uint64_t lower_val = 0;
+    uint64_t upper_val = 0;
+    uint64_t lover_obj = 0;
+    uint64_t upper_obj = 0;
 public:
-    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal);
+    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint64_t lowerVal);
 
-    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint32_t lowerVal, uint32_t upperVal);
+    DeliveryGuarantee(DELIVERY_GUARANTEE type, uint64_t lowerVal, uint64_t upperVal);
 
     [[nodiscard]] DELIVERY_GUARANTEE getType() const;
 
-    [[nodiscard]] uint32_t getLowerVal() const;
+    [[nodiscard]] uint64_t getLowerVal() const;
 
-    void setLowerVal(uint32_t lowerVal);
+    void setLowerVal(uint64_t lowerVal);
 
-    [[nodiscard]] uint32_t getUpperVal() const;
+    [[nodiscard]] uint64_t getUpperVal() const;
 
-    void setUpperVal(uint32_t upperVal);
+    void setUpperVal(uint64_t upperVal);
 
-    [[nodiscard]] uint32_t getLoverObj() const;
+    [[nodiscard]] uint64_t getLoverObj() const;
 
-    void setLoverObj(uint32_t loverObj);
+    void setLoverObj(uint64_t loverObj);
 
-    [[nodiscard]] uint32_t getUpperObj() const;
+    [[nodiscard]] uint64_t getUpperObj() const;
 
-    void setUpperObj(uint32_t upperObj);
+    void setUpperObj(uint64_t upperObj);
 
 
 };
