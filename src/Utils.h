@@ -68,6 +68,14 @@ public:
         return hyperPeriod;
     }
 
+    static bool compareFlowWithPCP(const Flow &flow1, const Flow &flow2) {
+        return flow1.getPriorityCodePoint() > flow2.getPriorityCodePoint();
+    }
+
+    static bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
+        return flow1.getPeriod() < flow2.getPeriod();
+    }
+
     int getRandInt(size_t min, size_t max) {
         std::uniform_int_distribution<int>::param_type param(min, max);
         randInteger.param(param);
