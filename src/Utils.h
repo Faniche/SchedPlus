@@ -82,9 +82,9 @@ public:
         return randInteger(generator);
     }
 
-    PRIORITY_CODE_POINT getRandPCP() {
+    schedplus::PRIORITY_CODE_POINT getRandPCP() {
 //        return getRandInt(0, 7);
-        return static_cast<PRIORITY_CODE_POINT>(getRandInt(5, 6));
+        return static_cast<schedplus::PRIORITY_CODE_POINT>(getRandInt(5, 6));
     }
 
     node_idx getRandESIdx(std::vector<Node *> &esList) {

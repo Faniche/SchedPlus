@@ -2,6 +2,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include "src/solutions/GA.h"
+#include "src/solutions/GA_4sw_ring.h"
+//#include "src/solutions/GA_line_2_2.h"
+#include "src/solutions/GA_line_2_2.h"
+
 
 //using std::vector;
 namespace spd = spdlog;
@@ -37,7 +41,12 @@ int main(int argc, char *argv[]) {
         SPDLOG_TRACE(console, "Enabled only #ifdef SPDLOG_TRACE_ON..{} ,{}", 1, 3.23);
         SPDLOG_DEBUG(console, "Enabled only #ifdef SPDLOG_DEBUG_ON.. {} ,{}", 1, 3.23);
 
-        openGACal();
+//        openGACal();
+//        Small4SwRing::openGACal();
+        GA_line_2_2::openGACal();
+//        GA_line_2_1::openGACal();
+
+
         // Release and close all loggers
         spd::drop_all();
     } catch (const spd::spdlog_ex &ex) {

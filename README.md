@@ -2,6 +2,10 @@
 ```shell
 # install spdlog
 sudo apt install libspdlog-dev -y
+
+# install uuid lib
+sudo apt-get install uuid-dev
+
 # install google test library
 git clone https://github.com/google/googletest.git
 mkdir /tmp/build

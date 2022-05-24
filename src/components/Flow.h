@@ -8,7 +8,7 @@
 
 #include "NodeImpl.h"
 #include "Link.h"
-#include "../include/MyVlan.h"
+#include "../include/type.h"
 #include "../Route.h"
 #include "../Delivery/DeliveryGuarantee.h"
 
@@ -27,7 +27,7 @@ private:
     /* The frame length include network headers of a packet of each frame */
     uint16_t frameLength = 0;
 
-    PRIORITY_CODE_POINT priorityCodePoint;
+    schedplus::PRIORITY_CODE_POINT priorityCodePoint;
 
     /* The delivery guarantee */
     std::vector<DeliveryGuarantee> deliveryGuarantees;
@@ -56,7 +56,7 @@ private:
     static const std::vector<uint8_t> randPeriod;
 
 public:
-    Flow(uint32_t _id, uint64_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
+    Flow(uint32_t _id, uint64_t period, schedplus::PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
 
     [[nodiscard]] uint64_t getId() const;
 
@@ -82,7 +82,7 @@ public:
 
     void setFrameLength(uint16_t frameLength);
 
-    [[nodiscard]] PRIORITY_CODE_POINT getPriorityCodePoint() const;
+    [[nodiscard]] schedplus::PRIORITY_CODE_POINT getPriorityCodePoint() const;
 
     [[nodiscard]] Node *getSrc() const;
 
@@ -104,9 +104,9 @@ public:
 
     std::string toString(std::ostringstream &oss);
 
-    static uint64_t getRandomPeriod(PRIORITY_CODE_POINT pcp);
+    static uint64_t getRandomPeriod(schedplus::PRIORITY_CODE_POINT pcp);
 
-    static uint16_t getRandomFrameLength(PRIORITY_CODE_POINT pcp);
+    static uint16_t getRandomFrameLength(schedplus::PRIORITY_CODE_POINT pcp);
 
 };
 

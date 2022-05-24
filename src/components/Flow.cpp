@@ -19,7 +19,7 @@ const std::vector<uint8_t> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16,
  * @param rep                   The replication of the frame, default 1
  * @param multicast             The flow is multicast of not
  */
-Flow::Flow(uint32_t _id, uint64_t period, PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
+Flow::Flow(uint32_t _id, uint64_t period, schedplus::PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest,
            bool isCritical, uint8_t rep, bool multicast)
         : id(_id),
           period(period),
@@ -101,7 +101,7 @@ void Flow::setFrameLength(uint16_t _frameLength) {
     Flow::frameLength = _frameLength;
 }
 
-PRIORITY_CODE_POINT Flow::getPriorityCodePoint() const {
+schedplus::PRIORITY_CODE_POINT Flow::getPriorityCodePoint() const {
     return priorityCodePoint;
 }
 
@@ -175,7 +175,7 @@ std::string Flow::toString(std::ostringstream &oss) {
  * @brief Generate a period of frame in a flow. unit: ns
  * @retval uint32_t
  */
-uint64_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
+uint64_t Flow::getRandomPeriod(schedplus::PRIORITY_CODE_POINT pcp) {
     if (pcp < 5) {
         spdlog::get("console")->error("Invalid PCP code: {}", pcp);
         return 0;
@@ -186,18 +186,18 @@ uint64_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     uint8_t idx = randFramePeriod(engine);
     uint64_t a = randPeriod[idx];
     switch (pcp) {
-        case P5:
+        case schedplus::P5:
             // 5                Cyclic                  2ms-20ms
             while (a == 1) a = randPeriod[randFramePeriod(engine)];
             //     μs     ns
             a *= (1000 * 1000);
             break;
-        case P6:
+        case schedplus::P6:
             // 6                Isochronous             100μs-2ms
             //     μs    ns
             a *= (100 * 1000);
             break;
-        case P7:
+        case schedplus::P7:
             // 7 (highest)      Network control         50ms-1s
             //          μs     ns
             a *= (50 * 1000 * 1000);
@@ -206,7 +206,7 @@ uint64_t Flow::getRandomPeriod(PRIORITY_CODE_POINT pcp) {
     return a;
 }
 
-uint16_t Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
+uint16_t Flow::getRandomFrameLength(schedplus::PRIORITY_CODE_POINT pcp) {
     static std::random_device randomDevice;
     static std::default_random_engine engine(randomDevice());
     static std::uniform_int_distribution<uint16_t> randFrameLen;
@@ -219,28 +219,28 @@ uint16_t Flow::getRandomFrameLength(PRIORITY_CODE_POINT pcp) {
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP6(30, 100);
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP7(50, 500);
     switch (pcp) {
-        case P0:
+        case schedplus::P0:
             randFrameLen.param(paramFrameLenP0);
             break;
-        case P1:
+        case schedplus::P1:
             randFrameLen.param(paramFrameLenP1);
             break;
-        case P2:
+        case schedplus::P2:
             randFrameLen.param(paramFrameLenP2);
             break;
-        case P3:
+        case schedplus::P3:
             randFrameLen.param(paramFrameLenP3);
             break;
-        case P4:
+        case schedplus::P4:
             randFrameLen.param(paramFrameLenP4);
             break;
-        case P5:
+        case schedplus::P5:
             randFrameLen.param(paramFrameLenP5);
             break;
-        case P6:
+        case schedplus::P6:
             randFrameLen.param(paramFrameLenP6);
             break;
-        case P7:
+        case schedplus::P7:
             randFrameLen.param(paramFrameLenP7);
             break;
     }

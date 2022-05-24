@@ -147,7 +147,7 @@ void openGACal() {
             a = util.getRandESIdx(esList);
             b = util.getRandESIdx(esList);
         } while (a == b);
-        PRIORITY_CODE_POINT pcp = util.getRandPCP();
+        schedplus::PRIORITY_CODE_POINT pcp = util.getRandPCP();
         Flow flow(i,
                   Flow::getRandomPeriod(pcp),
                   pcp,
@@ -156,11 +156,11 @@ void openGACal() {
                   false,
                   1,
                   false);
-        if (pcp == P6) {
+        if (pcp == schedplus::P6) {
             /* unit: ns*/
             DeliveryGuarantee deliveryGuarantee(DDL, flow.getPeriod());
             flow.addDeliveryGuarantee(deliveryGuarantee);
-        } else if (pcp == P5) {
+        } else if (pcp == schedplus::P5) {
             /* Typically less than 90% of period. */
             /* unit: ns*/
             DeliveryGuarantee deliveryGuarantee(E2E, flow.getPeriod() / 10);
