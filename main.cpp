@@ -3,36 +3,30 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include "src/solutions/GA.h"
 #include "src/solutions/GA_4sw_ring.h"
-//#include "src/solutions/GA_line_2_2.h"
+#include "src/solutions/GA_line_2_1.h"
 #include "src/solutions/GA_line_2_2.h"
+#include "lib/CLI11/include/CLI/CLI.hpp"
 
-
-//using std::vector;
 namespace spd = spdlog;
 
-int main(int argc, char *argv[]) {
-//    if (argc < 5) {
-//        log_info("Version %d.%d\n", Client_VERSION_MAJOR, Client_VERSION_MINOR);
-//        log_info("Usage: %s work_mode.\n", argv[0]);
-//        log_info("server address: %s.\n", argv[1]);
-//    }
+int main(int argc, char **argv) {
+    CLI::App app{"Schedplus: based on GA to schedule time sensitive flows."};
+    int flag_topology = 0;
+    std::string topology_description = "Topology index:\n\t1: line_1sw_2es\n\t2: line_2sw_2es\n\t3: ring_4sw";
+    app.add_flag("-t, --topology", flag_topology, topology_description);
     try {
-        // Console logger with color
+        CLI11_PARSE(app, argc, argv);
+    } catch (CLI::ParseError error) {
+        app.exit(error);
+    }
+    try {
         auto console = spd::stdout_color_mt("console");
-//        console->set_pattern("%D %H:%M:%S %l %g %# %v");
-        // Customize msg format for all messages
         spd::set_pattern("[%H:%M:%S][%^%l%$] [thread %t] %v");
         spd::set_level(spd::level::info); //Set global log level to info
-
-        // Use global registry to retrieve loggers
-        spd::get("console")->info(
-                "loggers can be retrieved from a global registry using the spdlog::get(logger_name) function");
 
         // Create basic file logger (not rotated)
         auto my_logger = spd::basic_logger_mt("basic_logger", "schedule.txt");
         my_logger->info("Some log message");
-
-
 
         console->set_level(spd::level::debug); // Set specific logger's log level
 
@@ -41,18 +35,65 @@ int main(int argc, char *argv[]) {
         SPDLOG_TRACE(console, "Enabled only #ifdef SPDLOG_TRACE_ON..{} ,{}", 1, 3.23);
         SPDLOG_DEBUG(console, "Enabled only #ifdef SPDLOG_DEBUG_ON.. {} ,{}", 1, 3.23);
 
-//        openGACal();
-//        Small4SwRing::openGACal();
-        GA_line_2_2::openGACal();
-//        GA_line_2_1::openGACal();
+        std::vector<Node *> nodes;
+        std::vector<Node *> esList;
+        std::vector<Node *> swList;
+        std::map<node_idx , Node *> nodeMap;
+        std::vector<DirectedLink> links;
+        std::vector<Flow> flows;
 
+        if (flag_topology > 0) {
+            spdlog::get("console")->info("Topology index: {}", flag_topology);
+            switch (flag_topology) {
+                case 1:
+                    GA_line_2_1::openGACal(2, nodes, esList, swList, nodeMap, links, flows);
+                    break;
+                case 2:
+                    GA_line_2_2::openGACal(16, nodes, esList, swList, nodeMap, links, flows);
+                case 3:
+                    Small4SwRing::openGACal(16, nodes, esList, swList, nodeMap, links, flows);
+                    break;
+                default:
+                    openGACal(24, nodes, esList, swList, nodeMap, links, flows);
+            }
+        }
+        MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small",
+                             nodes, esList, swList, nodeMap, links, flows);
 
-        // Release and close all loggers
+        EA::Chronometer timer;
+        timer.tic();
+
+        GA_Type ga_obj;
+        ga_obj.problem_mode = EA::GA_MODE::NSGA_III;
+        ga_obj.multi_threading = true;
+        ga_obj.dynamic_threading = true;
+        ga_obj.verbose = true;
+        ga_obj.population = 20;
+        ga_obj.generation_max = 100;
+
+        using std::bind;
+        using std::placeholders::_1;
+        using std::placeholders::_2;
+        using std::placeholders::_3;
+
+        ga_obj.calculate_MO_objectives = bind(&MyFunctions::calculate_MO_objectives, &myobject, _1);
+        ga_obj.init_genes =  bind(&MyFunctions::init_genes, &myobject, _1, _2);
+        ga_obj.eval_solution = bind(&MyFunctions::eval_solution, &myobject, _1, _2);
+        ga_obj.mutate = bind(&MyFunctions::mutate, &myobject, _1, _2, _3);
+        ga_obj.crossover = bind(&MyFunctions::crossover, &myobject, _1, _2, _3);
+        ga_obj.MO_report_generation = bind(&MyFunctions::MO_report_generation, &myobject, _1, _2, _3);
+
+        ga_obj.crossover_fraction = 0.9;
+        ga_obj.mutation_rate = 0.2;
+        ga_obj.solve();
+
+        std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
+        myobject.save_results(ga_obj, "/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small");
+
         spd::drop_all();
     } catch (const spd::spdlog_ex &ex) {
         std::cout << "Log init failed: " << ex.what() << std::endl;
         return 1;
     }
-
     return 0;
 }
