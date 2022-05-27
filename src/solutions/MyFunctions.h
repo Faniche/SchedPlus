@@ -16,6 +16,7 @@
 #include "../Utils.h"
 #include "../../lib/openGA.hpp"
 #include "../../lib/pugixml.hpp"
+#include "../event/Event.h"
 
 class MyFunctions {
 private:
@@ -25,16 +26,20 @@ private:
     std::map<node_idx, Node *> nodeMap;
     std::vector<std::reference_wrapper<DirectedLink>> links;
     std::vector<std::reference_wrapper<Flow>> flows;
-    std::map<node_idx, std::vector<std::reference_wrapper<Flow>>> flowGroup;
+    std::string output_location;
+    uint64_t hyperPeriod;
+    std::vector<schedplus::Event> events;
+    std::map<uint32_t, std::vector<uint32_t>> link_flows;
+    std::map<uint32_t, uint64_t> link_hyperperiod;
 
     static bool compIntervals(const std::pair<uint64_t, uint64_t> &p1, const std::pair<uint64_t, uint64_t> &p2) {
         return p1.first < p2.first;
     }
 
-    static std::map<uint32_t, uint64_t> getLinkHyperperiods(const std::vector<std::reference_wrapper<Flow>> &flows,
-                                                            const std::vector<uint64_t> &selected_route_idx) {
-        std::map<uint32_t, uint64_t> link_hyperperiod;
-        /* Calculate all hyperperiod of links */
+    void setLinkHyperperiod(const std::vector<uint64_t> &selected_route_idx){
+        if (!link_hyperperiod.empty()) {
+            link_hyperperiod.clear();
+        }
         for (auto const &flow: flows) {
             for (auto &link: flow.get().getRoutes()[selected_route_idx[flow.get().getId() - 1]].getLinks()) {
                 uint32_t link_id = link.get().getId();
@@ -45,33 +50,38 @@ private:
                 }
             }
         }
-        return link_hyperperiod;
     }
 
-    static void setTimeIntervals(const std::vector<std::reference_wrapper<Flow>> &flows,
-                                 const std::vector<uint64_t> &offsets,
+
+    void setLinkFLow(){
+        link_flows.clear();
+        for (auto const &flow: flows) {
+            for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
+                link_flows[link.get().getId()].emplace_back(flow.get().getId());
+            }
+        }
+    }
+
+    void setTimeIntervals(const std::vector<uint64_t> &offsets,
                                  const std::vector<uint64_t> &selected_route_idx,
                                  std::map<uint32_t, std::vector<std::pair<uint64_t, uint64_t>>> &transmit_intervals) {
         //        link_id     mem
         std::map<uint32_t, uint64_t> mem_allocate;
-        //       link_id   src_port_hyperperiod
-        std::map<uint32_t, uint64_t> link_hyperperiod;
-
+        std::map<uint32_t, uint64_t> _link_hyperperiod;
         for (auto const &flow: flows) {
             for (auto &link: flow.get().getRoutes()[selected_route_idx[flow.get().getId() - 1]].getLinks()) {
                 uint32_t link_id = link.get().getId();
-                if (link_hyperperiod.contains(link_id)) {
-                    link_hyperperiod[link_id] = Util::lcm(link_hyperperiod[link_id], flow.get().getPeriod());
+                if (_link_hyperperiod.contains(link_id)) {
+                    _link_hyperperiod[link_id] = Util::lcm(_link_hyperperiod[link_id], flow.get().getPeriod());
                 } else {
-                    link_hyperperiod[link_id] = flow.get().getPeriod();
+                    _link_hyperperiod[link_id] = flow.get().getPeriod();
                 }
             }
         }
-
         for (auto const &flow: flows) {
             for (auto &link: flow.get().getRoutes()[selected_route_idx[flow.get().getId() - 1]].getLinks()) {
                 uint32_t link_id = link.get().getId();
-                uint64_t sendTimes = link_hyperperiod[link_id] / flow.get().getPeriod();
+                uint64_t sendTimes = _link_hyperperiod[link_id] / flow.get().getPeriod();
                 for (int i = 0; i < sendTimes; ++i) {
                     if (mem_allocate.contains(link_id)) {
                         mem_allocate[link_id] += sendTimes;
@@ -96,7 +106,7 @@ private:
                 proc_delay = link.get().getSrcNode()->getDpr();
                 trans_delay = flow.get().getFrameLength() * link.get().getSrcPort().getMacrotick();
                 accumulatedDelay += proc_delay;
-                uint64_t sendTimes = link_hyperperiod[link_id] / flow.get().getPeriod();
+                uint64_t sendTimes = _link_hyperperiod[link_id] / flow.get().getPeriod();
                 for (uint32_t i = 0; i < sendTimes; ++i) {
                     uint64_t start_time = accumulatedDelay + i * flow.get().getPeriod();
                     transmit_intervals[link_id].emplace_back(std::pair(start_time, trans_delay));
@@ -111,31 +121,29 @@ private:
         }
     }
 
-
 public:
-    std::ofstream output_file;
 
-    MyFunctions(const std::string &output_location,
+    MyFunctions(std::string output_location,
                 std::vector<Node *> nodes,
                 std::vector<Node *> esList,
                 std::vector<Node *> swList,
                 std::map<node_idx, Node *> nodeMap,
                 std::vector<DirectedLink> &_links,
-                std::vector<Flow> &_flows,
-                std::map<node_idx, std::vector<std::reference_wrapper<Flow>>> flowGroup) :
+                std::vector<Flow> &_flows) :
+            output_location(std::move(output_location)),
             nodes(std::move(nodes)),
             esList(std::move(esList)),
             swList(std::move(swList)),
-            nodeMap(std::move(nodeMap)),
-            flowGroup(std::move(flowGroup)) {
-//        output_file.open(output_location);
+            nodeMap(std::move(nodeMap)) {
+
         links.assign(_links.begin(), _links.end());
         flows.assign(_flows.begin(), _flows.end());
+        std::vector<std::reference_wrapper<Flow>> wrapper_flows(flows.begin(), flows.end());
+        std::ostringstream oss;
+        hyperPeriod = Util::getHyperPeriod(wrapper_flows, oss);
     }
 
-    ~MyFunctions() {
-        output_file.close();
-    }
+    ~MyFunctions() = default;
 
     void init_genes(TTFlows &p, const std::function<double(void)> &rnd01) {
         p.offsets.assign(flows.size(), 0);
@@ -162,7 +170,7 @@ public:
     bool eval_solution(const TTFlows &p, MyMiddleCost &c) {
         /* Check delivery guarantees. */
         uint64_t max_ddl = 0, max_e2e = 0;
-        for (auto &flow: flows) {
+        for (auto const &flow: flows) {
             uint32_t flow_id = flow.get().getId() - 1;
             uint64_t e2e = flow.get().getRoutes()[p.selected_route_idx[flow_id]].getE2E();
             /* Check delivery guarantees */
@@ -185,10 +193,10 @@ public:
         /* Check gcl collision */
         //       link_id                          start     interval
         std::map<uint32_t, std::vector<std::pair<uint64_t, uint64_t>>> transmit_intervals;
-        setTimeIntervals(flows, p.offsets, p.selected_route_idx, transmit_intervals);
+        setTimeIntervals(p.offsets, p.selected_route_idx, transmit_intervals);
         for (auto &[link_idx, intervals]: transmit_intervals)
             for (int i = 0; i < intervals.size() - 1; ++i)
-                if (intervals[i].first + intervals[i].second + schedplus::IFG > intervals[i + 1].first)
+                if (intervals[i].first + intervals[i].second + schedplus::IFG_TIME > intervals[i + 1].first)
                     return false;
 
 
@@ -217,7 +225,7 @@ public:
                                                         p.offsets[flow.get().getId() - 1]);
                       });
         spdlog::get("console")->debug("******************************");
-        return true; // solution is accepted
+        return true;
     }
 
     TTFlows mutate(
@@ -232,13 +240,16 @@ public:
             uint64_t offset = 0, route = 0;
             bool in_range;
             do {
-                in_range = true;
                 offset = X_base.offsets[flow_id] + mu * (rnd01() - rnd01());
                 int srcTransDelay =
                         flow.get().getFrameLength() * ((EndSystem *) flow.get().getSrc())->getPort().getMacrotick();
-                in_range = in_range && offset >= 0 && offset < flow.get().getPeriod() - srcTransDelay;
-                route = X_base.selected_route_idx[flow_id] + mu * (rnd01() - rnd01());
-                in_range = in_range && route >= 0 && route < flow.get().getRoutes().size();
+                in_range = (offset >= 0) && (offset < (flow.get().getPeriod() - srcTransDelay));
+                if (flow.get().getRoutes().size() > 1) {
+                    route = X_base.selected_route_idx[flow_id] + mu * (rnd01() - rnd01());
+                    in_range = in_range && route >= 0 && route < flow.get().getRoutes().size();
+                } else {
+                    route = 0;
+                }
             } while (!in_range);
             X_new.offsets[flow_id] = offset;
             X_new.selected_route_idx[flow_id] = route;
@@ -257,8 +268,12 @@ public:
         for (int i = 0; i < X1.offsets.size(); ++i) {
             uint64_t offset = r_offset * X1.offsets[i] + (1.0 - r_offset) * X2.offsets[i];
             X_new.offsets[i] = offset;
-            uint64_t route = r_route * X1.selected_route_idx[i] + (1.0 - r_route) * X2.selected_route_idx[i];
-            X_new.selected_route_idx[i] = route;
+            if (flows[i].get().getRoutes().size() > 1) {
+                uint64_t route = r_route * X1.selected_route_idx[i] + (1.0 - r_route) * X2.selected_route_idx[i];
+                X_new.selected_route_idx[i] = route;
+            } else {
+                X_new.selected_route_idx[i] = 0;
+            }
         }
         return X_new;
     }
@@ -286,8 +301,7 @@ public:
         std::cout << "}" << std::endl;
     }
 
-    void save_results(GA_Type &ga_obj, const std::string &output_location) {
-//        std::ostringstream oss;
+    void save_results(GA_Type &ga_obj, const std::string &ned_file) {
         std::vector<unsigned int> paretofront_indices = ga_obj.last_generation.fronts[0];
         for (unsigned int i: paretofront_indices) {
             /* set flow offset and route index */
@@ -296,36 +310,36 @@ public:
                 uint32_t flow_id = flow.get().getId() - 1;
                 flow.get().setOffset(X.genes.offsets[flow_id]);
                 flow.get().setSelectedRouteInx(X.genes.selected_route_idx[flow_id]);
-//                spdlog::get("console")->info("flow_{}, route: {}", flow_id, flow.get().getRoutes()[X.genes.selected_route_idx[flow_id]].toString());
             }
+            setLinkHyperperiod(X.genes.selected_route_idx);
+            setLinkFLow();
             saveGCL(X.genes.offsets, X.genes.selected_route_idx);
 
             std::string route_file = output_location;
             route_file.append("/" + std::to_string(i) + "SmallRouting.xml");
-            saveRoute(route_file);
+            save_route(route_file);
 
             std::string gcl_file = output_location;
-            gcl_file.append("/" + std::to_string(i) );
+            gcl_file.append("/" + std::to_string(i));
             saveGCL(gcl_file, X.genes.selected_route_idx);
 
             std::string route_file_name = std::to_string(i) + "SmallRouting.xml";
             std::string gcl_file_name = std::to_string(i) + "SmallGCL.xml";
             std::string ini_file = output_location;
             ini_file.append("/" + std::to_string(i) + "SmallTopology.ini");
-            savIni(route_file_name, gcl_file_name, ini_file, i);
+            savIni(route_file_name, gcl_file_name, ini_file, ned_file, i);
 
+//            std::string event_file = output_location;
+//            event_file.append("/" + std::to_string(i) + "event.txt");
+//            saveEvent(X.genes.offsets, X.genes.selected_route_idx, event_file);
         }
     }
 
-    void saveRoute(const std::string &output_location) {
-        spdlog::get("console")->info("Saving route: {}", output_location);
-        std::map<uint32_t, std::vector<uint32_t>> link_flows;
-        for (auto const &flow: flows) {
-            for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
-                uint32_t link_id = link.get().getId();
-                link_flows[link_id].emplace_back(flow.get().getId());
-            }
-        }
+    void save_route(const std::string &route_file_location) {
+        spdlog::get("console")->info("Saving route: {}", route_file_location);
+
+
+
         std::map<node_idx, std::vector<uint32_t >> sw_links;
         for (auto const &sw: swList) {
             for (auto const &[link_id, flowids]: link_flows) {
@@ -369,29 +383,22 @@ public:
             }
         }
 //        xdoc.print(std::cout);
-        xdoc.save_file(output_location.c_str());
+        xdoc.save_file(route_file_location.c_str());
     }
 
-    void saveGCL(const std::string &output_location, const std::vector<uint64_t> &selected_route_idx) {
-        std::string switch_gcl_file = output_location + "SmallGCL.xml";
+    void saveGCL(const std::string &gcl_file_location, const std::vector<uint64_t> &selected_route_idx) {
+        std::string switch_gcl_file = gcl_file_location + "SmallGCL.xml";
         saveSwPortSchedule(switch_gcl_file, selected_route_idx);
-
-        saveEsSchedule(output_location, selected_route_idx);
+        saveEsSchedule(gcl_file_location, selected_route_idx);
     }
 
-    void saveSwPortSchedule(const std::string &output_location, const std::vector<uint64_t> &selected_route_idx){
-        spdlog::get("console")->info("Saving gcl: {}", output_location);
-        std::map<uint32_t, uint64_t> link_hyperperiod = getLinkHyperperiods(flows, selected_route_idx);
-
+    void saveSwPortSchedule(const std::string &sched_file_location, const std::vector<uint64_t> &selected_route_idx) {
+        spdlog::get("console")->info("Saving gcl: {}", sched_file_location);
         pugi::xml_document xdoc;
         pugi::xml_node xdec = xdoc.prepend_child(pugi::node_declaration);
         xdec.append_attribute("version").set_value("1.0");
         xdec.append_attribute("encoding").set_value("utf-8");
         pugi::xml_node xschedules = xdoc.append_child("schedules");
-
-        std::vector<std::reference_wrapper<Flow>> wrapper_flows(flows.begin(), flows.end());
-        std::ostringstream oss;
-        uint64_t hyperPeriod = Util::getHyperPeriod(wrapper_flows, oss);
         pugi::xml_node xhyperperiod = xschedules.append_child("defaultcycle");
         std::string hyp_str = std::to_string(hyperPeriod) + "ns";
         xhyperperiod.append_child(pugi::node_pcdata).set_value(hyp_str.c_str());
@@ -404,9 +411,9 @@ public:
             for (int i = 0; i < ports; ++i) {
                 for (auto const &link: links) {
                     if (link.get().getSrcNode() == sw) {
-                        spdlog::get("console")->info("switch: {}, port: {}", sw->getName(), i);
                         if (uuid_compare(link.get().getSrcPort().getId(),
-                                         ((Switch *) sw)->getPorts()[i].getId()) == 0 && !link.get().getSrcPort().getGateControlList().empty()) {
+                                         ((Switch *) sw)->getPorts()[i].getId()) == 0 &&
+                            !link.get().getSrcPort().getGateControlList().empty()) {
                             uint32_t link_id = link.get().getId();
                             pugi::xml_node xport = xswitch.append_child("port");
                             pugi::xml_attribute xport_id = xport.append_attribute("id");
@@ -424,7 +431,8 @@ public:
                                 pugi::xml_node xall_open_len = xall_open_entry.append_child("length");
                                 xall_open_len.append_child(pugi::node_pcdata).set_value(wnd_len_str.c_str());
                                 pugi::xml_node xapp_open_bitvec = xall_open_entry.append_child("bitvector");
-                                xapp_open_bitvec.append_child(pugi::node_pcdata).set_value(gateControlEntry.toBitVec().c_str());
+                                xapp_open_bitvec.append_child(pugi::node_pcdata).set_value(
+                                        gateControlEntry.toBitVec().c_str());
 
                                 pugi::xml_node xentry = xschedule.append_child("entry");
                                 pugi::xml_node xlen = xentry.append_child("length");
@@ -433,7 +441,6 @@ public:
                                 pugi::xml_node xbitvec = xentry.append_child("bitvector");
                                 xbitvec.append_child(pugi::node_pcdata).set_value(gcl_entity.toBitVec().c_str());
                                 cur = gcl_entity.getStartTime() + gcl_entity.getTimeIntervalValue();
-                                spdlog::get("console")->info("\tStart: {}, duration: {}", gcl_entity.getStartTime(), gcl_entity.getTimeIntervalValue());
                             }
                             if (cur < link_hyperperiod[link_id]) {
                                 uint64_t gap = link_hyperperiod[link_id] - cur;
@@ -450,73 +457,79 @@ public:
                 }
             }
         }
-        xdoc.save_file(output_location.c_str());
+        xdoc.save_file(sched_file_location.c_str());
     }
 
-    void saveEsSchedule(const std::string &output_location, const std::vector<uint64_t> &selected_route_idx){
-        std::map<uint32_t, uint64_t> link_hyperperiod = getLinkHyperperiods(flows, selected_route_idx);
-        std::map<uint32_t, std::vector<uint32_t>> link_flows;
-        for (auto const &flow: flows) {
-            for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
-                uint32_t link_id = link.get().getId();
-                link_flows[link_id].emplace_back(flow.get().getId());
-            }
+    void saveEsSchedule(const std::string &sched_file_location, const std::vector<uint64_t> &selected_route_idx) {
+        std::map<node_idx, std::vector<std::reference_wrapper<Flow>>> flowGroup;
+        /* Group the flow with src */
+        for (auto &flow: flows) {
+            node_idx key = Node::nodeToIdx(nodeMap, flow.get().getSrc());
+            flowGroup[key].emplace_back(flow);
         }
-        for (auto &es: esList) {
-            for (auto const &[link_id, flowids]: link_flows) {
-                if (links[link_id].get().getSrcNode() == es) {
-                    pugi::xml_document xesdoc;
-                    pugi::xml_node xesdec = xesdoc.prepend_child(pugi::node_declaration);
-                    xesdec.append_attribute("version").set_value("1.0");
-                    xesdec.append_attribute("encoding").set_value("utf-8");
-                    pugi::xml_node xes_schedules = xesdoc.append_child("schedules");
-                    pugi::xml_node xes_cycle = xes_schedules.append_child("defaultcycle");
-                    std::string cyc_str = std::to_string(link_hyperperiod[link_id]) + "ns";
-                    xes_cycle.append_child(pugi::node_pcdata).set_value(cyc_str.c_str());
-                    pugi::xml_node xhost = xes_schedules.append_child("host");
-                    pugi::xml_attribute xname = xhost.append_attribute("name");
-                    xname.set_value(es->getName().c_str());
-                    pugi::xml_node xcycle = xhost.append_child("cycle");
-                    xcycle.append_child(pugi::node_pcdata).set_value(cyc_str.c_str());
-                    for (auto const &flow_id: flowids) {
-                        pugi::xml_node xentry = xhost.append_child("entry");
-                        pugi::xml_node xstart = xentry.append_child("start");
-                        std::string start_str = std::to_string(flows[flow_id - 1].get().getOffset()) + "ns";
-                        xstart.append_child(pugi::node_pcdata).set_value(start_str.c_str());
-                        pugi::xml_node xqueue = xentry.append_child("queue");
-                        xqueue.append_child(pugi::node_pcdata).set_value(std::to_string(flows[flow_id - 1].get().getPriorityCodePoint()).c_str());
-                        pugi::xml_node xdest = xentry.append_child("dest");
-                        std::string dest_str = "255:0:00:00:00:" + std::to_string(flow_id);
-                        if (flow_id < 10) {
-                            dest_str.insert(dest_str.length() - 1, "0");
-                        }
-                        xdest.append_child(pugi::node_pcdata).set_value(dest_str.c_str());
-                        pugi::xml_node xsize = xentry.append_child("size");
-                        std::string size_str = std::to_string(flows[flow_id - 1].get().getFrameLength() - 22) + "B";
-                        xsize.append_child(pugi::node_pcdata).set_value(size_str.c_str());
-                        pugi::xml_node xflowId = xentry.append_child("flowId");
-                        xflowId.append_child(pugi::node_pcdata).set_value(std::to_string(flow_id).c_str());
-
-                    }
-//                    xesdoc.print(std::cout);
-                    std::string es_traffic_gen = output_location + es->getName() + ".xml";
-                    xesdoc.save_file(es_traffic_gen.c_str());
+        /* Sort the flow with PCP */
+        spdlog::set_level(spdlog::level::info);
+        for (auto &[src, _flows]: flowGroup) {
+            std::sort(_flows.begin(), _flows.end(), Util::compareFlowWithOffset);
+        }
+        for (auto &[src, _flows]: flowGroup) {
+            auto const &es = nodeMap[src];
+            pugi::xml_document xesdoc;
+            pugi::xml_node xesdec = xesdoc.prepend_child(pugi::node_declaration);
+            xesdec.append_attribute("version").set_value("1.0");
+            xesdec.append_attribute("encoding").set_value("utf-8");
+            pugi::xml_node xes_schedules = xesdoc.append_child("schedules");
+            pugi::xml_node xes_cycle = xes_schedules.append_child("defaultcycle");
+            std::string cyc_str;
+            for (auto const &link: links) {
+                if (link.get().getSrcNode() == es) {
+                    cyc_str = std::to_string(link_hyperperiod[link.get().getId()]) + "ns";
+                    break;
                 }
             }
+            xes_cycle.append_child(pugi::node_pcdata).set_value(cyc_str.c_str());
+            pugi::xml_node xhost = xes_schedules.append_child("host");
+            pugi::xml_attribute xname = xhost.append_attribute("name");
+            xname.set_value(es->getName().c_str());
+            pugi::xml_node xcycle = xhost.append_child("cycle");
+            xcycle.append_child(pugi::node_pcdata).set_value(cyc_str.c_str());
+            for (auto const &flow: _flows) {
+                pugi::xml_node xentry = xhost.append_child("entry");
+                pugi::xml_node xstart = xentry.append_child("start");
+                std::string start_str = std::to_string(flow.get().getOffset()) + "ns";
+                xstart.append_child(pugi::node_pcdata).set_value(start_str.c_str());
+                pugi::xml_node xqueue = xentry.append_child("queue");
+                xqueue.append_child(pugi::node_pcdata).set_value(
+                        std::to_string(flow.get().getPriorityCodePoint()).c_str());
+                pugi::xml_node xdest = xentry.append_child("dest");
+                std::string dest_str = "255:0:00:00:00:" + std::to_string(flow.get().getId());
+                if (flow.get().getId() < 10) {
+                    dest_str.insert(dest_str.length() - 1, "0");
+                }
+                xdest.append_child(pugi::node_pcdata).set_value(dest_str.c_str());
+                pugi::xml_node xsize = xentry.append_child("size");
+                std::string size_str = std::to_string(flow.get().getFrameLength() - schedplus::HEADER_LEN) + "B";
+                xsize.append_child(pugi::node_pcdata).set_value(size_str.c_str());
+                pugi::xml_node xflowId = xentry.append_child("flowId");
+                xflowId.append_child(pugi::node_pcdata).set_value(std::to_string(flow.get().getId()).c_str());
+                pugi::xml_node xflowPeriod = xentry.append_child("period");
+                std::string period_str = std::to_string(flow.get().getPeriod()) + "ns";
+                xflowPeriod.append_child(pugi::node_pcdata).set_value(period_str.c_str());
+            }
+            std::string es_traffic_gen = sched_file_location + es->getName() + ".xml";
+            xesdoc.save_file(es_traffic_gen.c_str());
         }
     }
 
     void saveGCL(const std::vector<uint64_t> &offsets,
                  const std::vector<uint64_t> &selected_route_idx) {
-
-        //       link_id   src_port_hyperperiod
-        std::map<uint32_t, uint64_t> link_hyperperiod = getLinkHyperperiods(flows, selected_route_idx);
         for (auto &flow: flows) {
             /* Calculate GCL */
             uint32_t flow_id = flow.get().getId() - 1;
             uint32_t offset = offsets[flow_id];
             uint32_t accumulatedDelay = offset;
             uint32_t prop_delay = 0, trans_delay = 0, proc_delay = 0;
+            flow.get().setSelectedRouteInx(selected_route_idx[flow_id]);
             for (auto &link: flow.get().getRoutes()[selected_route_idx[flow_id]].getLinks()) {
                 link.get().clearGateControlEntry();
                 uint32_t link_id = link.get().getId();
@@ -546,19 +559,97 @@ public:
         }
     }
 
-    void savIni(const std::string &route_file, const std::string &gcl_file, const std::string &ini_file, int solution_id) {
+    void saveEvent(const std::vector<uint64_t> &offsets,
+                   const std::vector<uint64_t> &selected_route_idx,
+                   const std::string &event_file_location) {
+        events.clear()  ;
+        std::ostringstream oss;
+        spdlog::get("console")->set_level(spdlog::level::info);
+        for (auto const &es: esList) {
+            for (auto const &flow: flows) {
+                if (flow.get().getSrc() == es) {
+                    auto &route = flow.get().getRoutes()[flow.get().getSelectedRouteInx()];
+                    uint64_t repeat_times = hyperPeriod / link_hyperperiod[route.getLinks()[0].get().getId()];
+                    for (int i = 0; i < repeat_times; ++i) {
+                        uint64_t accumulatedDelay;
+                        accumulatedDelay = flow.get().getOffset() + i * link_hyperperiod[route.getLinks()[0].get().getId()];
+                        uint64_t prop_delay = 0, trans_delay = 0, proc_delay = 0;
+                        int hop = route.getLinks().size();
+                        for (int j = 0; j < hop; ++j) {
+                            proc_delay = route.getLinks()[j].get().getSrcNode()->getDpr();
+                            prop_delay = route.getLinks()[j].get().getLen() * route.getLinks()[j].get().getPropSpeed();
+                            trans_delay = flow.get().getFrameLength() * route.getLinks()[j].get().getSrcPort().getMacrotick();
+                            accumulatedDelay += proc_delay;
+                            uint32_t sendTimes = link_hyperperiod[route.getLinks()[j].get().getId()] / flow.get().getPeriod();
+                            for (int k = 0; k < sendTimes; ++k) {
+                                uint64_t start_time = accumulatedDelay + k * flow.get().getPeriod();
+                                uint64_t end_time = start_time + trans_delay;
+                                schedplus::Event event(start_time, end_time, route.getLinks()[j].get().getSrcNode(),
+                                                       &flow.get(), j);
+                                if (j == 0) {
+                                    event.setType(schedplus::TRANSMIT);
+                                } else {
+                                    event.setType(schedplus::FORWARD);
+                                }
+                                spdlog::get("console")->debug(event.toString(oss));
+                                events.push_back(event);
+                                if(j == hop - 1){
+                                    event.setStart(end_time + prop_delay);
+                                    event.setEnd(end_time + prop_delay + trans_delay);
+                                    event.setType(schedplus::RECEIVE);
+                                    event.setNode(flow.get().getDest());
+                                    event.setHop(hop);
+                                    events.push_back(event);
+                                    spdlog::get("console")->debug(event.toString(oss));
+                                }
+                            }
+                            accumulatedDelay += trans_delay;
+                            accumulatedDelay += prop_delay;
+                        }
+                    }
+                }
+            }
+        }
+        schedplus::Event::sortEvent(events);
+        std::ofstream output;
+        output.open(event_file_location);
+        output << std::right << std::setw(6) << "event"
+               << std::left << std::setw(10) << "   start"
+               << std::left << std::setw(10) << "    end"
+               << std::left << std::setw(10) << "    type"
+               << std::left << std::setw(9) << "     node"
+               << std::right << std::setw(6) << " flow"
+               << std::right << std::setw(5) << "hop" << std::endl;
+        for (int i = 0; i < events.size(); ++i) {
+            auto &event = events[i];
+            output << std::right << std::setw(5) << i;
+            output << std::right << std::setw(10) << std::to_string(event.getStart());
+            output << std::right << std::setw(10) << std::to_string(event.getEnd());
+            output << std::right << std::setw(10) << event.getType();
+            output << std::right << std::setw(10) << event.getNode()->getName();
+            output << std::right << std::setw(5) << std::to_string(event.getFlow()->getId());
+            output << std::right << std::setw(5) << std::to_string(event.getHop()) << std::endl;
+        }
+        output.close();
+    }
+
+    void savIni(const std::string &route_file,
+                const std::string &gcl_file,
+                const std::string &ini_file,
+                const std::string &ned_file,
+                int solution_id) {
         std::ofstream output(ini_file);
         output << "[General]\n"
-                  "network = Small\n"
+                  "network = " << ned_file << "\n"
                   "\n"
                   "record-eventlog = false \n"
                   "debug-on-errors = true\n"
-                  "result-dir = results_gating\n"
-                  "sim-time-limit = 1ms\n"
+                  "result-dir = result/" <<  ned_file << "\n"
+                  "sim-time-limit =" << std::to_string(hyperPeriod / 1000000) <<  "ms\n"
                   "\n"
                   "# debug\n"
-                  "**.displayAddresses = true\n"
-                  "**.verbose = true" << std::endl;
+                  "**.displayAddresses = false\n"
+                  "**.verbose = false" << std::endl;
         output << "# MAC Addresses" << std::endl;
         for (auto const &es: esList) {
             node_idx id = Node::nodeToIdx(nodeMap, es) + 1;
@@ -566,35 +657,38 @@ public:
                    << R"(.eth.address = "00-00-00-00-00-)" << std::setw(2) << std::setfill('0') << std::hex << id
                    << "\"" << std::endl;
         }
-        output << R"(**.frequency = 1THz)" << std::endl;
+        output << R"(**.frequency = 1GHz)" << std::endl;
         output << "# Switches" << std::endl;
 
         output << R"(**.switch*.processingDelay.delay = 30000ns)" << std::endl;
 
-        output << R"(**.filteringDatabase.database = xmldoc("xml/)" << route_file << R"(", "/filteringDatabases/"))" << std::endl;
+        output << R"(**.filteringDatabase.database = xmldoc("xml/)" << route_file << R"(", "/filteringDatabases/"))"
+               << std::endl;
         for (auto const &sw: swList) {
             size_t ports = ((Switch *) sw)->getPortNum();
             for (int i = 0; i < ports; ++i) {
                 if (isPortInUse(((Switch *) sw)->getPorts()[i])) {
-                    output << "**." << sw->getName() << ".eth[" << std::to_string(i) << R"(].queue.gateController.initialSchedule = xmldoc("xml/)" << gcl_file;
-                    output << R"(", "/schedules/switch[@name=')" << sw->getName() << R"(']/port[@id=')" << std::to_string(i) << R"(']/schedule"))" << std::endl;
+                    output << "**." << sw->getName() << ".eth[" << std::to_string(i)
+                           << R"(].queue.gateController.initialSchedule = xmldoc("xml/)" << gcl_file;
+                    output << R"(", "/schedules/switch[@name=')" << sw->getName() << R"(']/port[@id=')"
+                           << std::to_string(i) << R"(']/schedule"))" << std::endl;
                 }
             }
         }
         output << R"(**.gateController.enableHoldAndRelease = true)" << std::endl;
         for (int i = 0; i < 8; ++i) {
-            output << R"(**.switch*.eth[*].queuing.tsAlgorithms[)" << std::to_string(i) << R"(].typename = "StrictPriority")" << std::endl;
+            output << R"(**.switch*.eth[*].queuing.tsAlgorithms[)" << std::to_string(i)
+                   << R"(].typename = "StrictPriority")" << std::endl;
         }
 //        output << R"(**.queues[*].bufferCapacity = 363360b)" << std::endl;
 //        output << R"(**.sw*.eth[*].mac.enablePreemptingFrames = false)" << std::endl;
 
         for (auto &es: esList) {
-            if (isPortInUse(((EndSystem*)es)->getPort())) {
+            if (isPortInUse(((EndSystem *) es)->getPort())) {
                 output << "**." << es->getName() << R"(.trafGenSchedApp.initialSchedule = xmldoc("xml/)"
-                << std::to_string(solution_id) << es->getName() << R"(.xml"))" << std::endl;
+                       << std::to_string(solution_id) << es->getName() << R"(.xml"))" << std::endl;
             }
         }
-
     }
 
     bool isPortInUse(const Port &port) {
