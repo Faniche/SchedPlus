@@ -216,7 +216,7 @@ uint16_t Flow::getRandomFrameLength(schedplus::PRIORITY_CODE_POINT pcp) {
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP3(100, 1500);
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP4(100, 200);
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP5(50, 1000);
-    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP6(30, 100);
+    static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP6(40, 100);
     static std::uniform_int_distribution<uint16_t>::param_type paramFrameLenP7(50, 500);
     switch (pcp) {
         case schedplus::P0:
