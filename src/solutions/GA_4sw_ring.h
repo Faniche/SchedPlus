@@ -116,7 +116,7 @@ public:
                 DeliveryGuarantee deliveryGuarantee(E2E, flow.getPeriod() / 10);
                 flow.addDeliveryGuarantee(deliveryGuarantee);
             }
-            flow.setFrameLength(Flow::getRandomFrameLength(pcp));
+            flow.setFrameLength(Flow::getRandomFrameLength(pcp) + schedplus::HEADER_LEN);
             util.calAllRoutes(nodeMap, flow, graph, links);
             flows.push_back(flow);
             oss.str("");
