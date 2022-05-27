@@ -24,13 +24,13 @@ private:
 
 public:
 /* https://stackoverflow.com/questions/3154454/what-is-the-most-efficient-way-to-calculate-the-least-common-multiple-of-two-int */
-    static long long gcd(long long int a, long long int b) {
+    static uint64_t gcd(uint64_t a, uint64_t b) {
         if (b == 0)
             return a;
         return gcd(b, a % b);
     }
 
-    static long long lcm(long long a, long long b) {
+    static uint64_t lcm(uint64_t a, uint64_t b) {
         if (a > b)
             return (a / gcd(a, b)) * b;
         else
@@ -42,7 +42,7 @@ public:
      */
     static uint64_t getHyperPeriod(std::vector<std::reference_wrapper<Flow>> &flows, std::ostringstream &oss) {
         oss.str("");
-        long long hyperPeriod = 0, a = 0, b = 0;
+        uint64_t hyperPeriod = 0, a = 0, b;
         for (auto & flow : flows) {
             if (flow.get().getPeriod() != 0) {
                 if (a == 0) {
@@ -72,6 +72,10 @@ public:
         return flow1.getPriorityCodePoint() > flow2.getPriorityCodePoint();
     }
 
+    static bool compareFlowWithOffset(const Flow &flow1, const Flow &flow2) {
+        return flow1.getOffset() < flow2.getOffset();
+    }
+
     static bool compareFlowWithPeriod(const Flow &flow1, const Flow &flow2) {
         return flow1.getPeriod() < flow2.getPeriod();
     }
@@ -98,7 +102,7 @@ public:
     * @param graph : Integer adjacency matrix of all node
     * @param alllinks : all alllinks vector
     **/
-    void calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
+    static void calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
         size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
         if (srcIdx == INT64_MAX)
             spdlog::get("console")->error("can not find the index of node: %s", flow.getSrc()->getName());
@@ -116,6 +120,7 @@ public:
                 DirectedLink* link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
                 if (link == nullptr) {
                     spdlog::get("console")->error("Null pointer error.");
+                    exit(EXIT_FAILURE);
                 }
                 srcIdx = destIdx;
                 route.addLink(*link);
