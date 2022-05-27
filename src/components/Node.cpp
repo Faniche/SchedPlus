@@ -43,7 +43,7 @@ size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
 
 /**
  * @brief get precess delay of node, unit： ns
- * @return   uint32_t
+ * @return   uint64_t
  * */
 uint64_t Node::getDpr() const {
     return dpr;

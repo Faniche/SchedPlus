@@ -15,6 +15,7 @@ class EndSystem : public Node {
 private:
     Port port;
 public:
+
     explicit EndSystem(std::string name, uint64_t dpr);
 
     [[nodiscard]] const Port &getPort() const;
