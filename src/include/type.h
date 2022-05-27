@@ -23,12 +23,12 @@ namespace schedplus {
     /**
      * @brief Inter Frame Gap, in Gigbit ethernet: 96ns
      **/
-    static const uint8_t IFG = 96;
+    static const uint8_t IFG_TIME = 96;
 
     /**
      * @brief Inter Frame Gap, in Gigbit ethernet: 96ns
      **/
-    static const uint8_t HEADER_LEN = 22;
+    static const uint8_t HEADER_LEN = 22 + 8;
 
 }
 
