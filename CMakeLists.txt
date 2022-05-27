@@ -15,9 +15,15 @@ add_executable(SchedPlus main.cpp
         lib/pugixml.hpp
         src/solutions/GA.h
         src/solutions/GA_Solution.h
-        src/solutions/MyFunctions.h src/solutions/GA_4sw_ring.h src/solutions/GA_line_2_2.h src/solutions/GA_line_2_1.h)
+        src/solutions/MyFunctions.h
+        src/solutions/GA_4sw_ring.h
+        src/solutions/GA_line_2_2.h
+        src/solutions/GA_line_2_1.h src/event/Event.h)
+
+add_subdirectory(lib/CLI11)
 
 target_link_libraries(SchedPlus
         uuid
         spdlog
-        pthread)
+        pthread
+        CLI11::CLI11)

@@ -11,9 +11,14 @@ namespace spd = spdlog;
 
 int main(int argc, char **argv) {
     CLI::App app{"Schedplus: based on GA to schedule time sensitive flows."};
-    int flag_topology = 0;
+    int option_topology = 0;
     std::string topology_description = "Topology index:\n\t1: line_1sw_2es\n\t2: line_2sw_2es\n\t3: ring_4sw";
-    app.add_flag("-t, --topology", flag_topology, topology_description);
+    app.add_option("-t, --topology", option_topology, topology_description);
+    std::string option_ned_file;
+    app.add_option("-n, --ned", option_ned_file, "Net description file name");
+    int option_flow_number = 2;
+    app.add_option("-f, --flows", option_flow_number, "The number of flow");
+
     try {
         CLI11_PARSE(app, argc, argv);
     } catch (CLI::ParseError error) {
@@ -42,24 +47,27 @@ int main(int argc, char **argv) {
         std::vector<DirectedLink> links;
         std::vector<Flow> flows;
 
-        if (flag_topology > 0) {
-            spdlog::get("console")->info("Topology index: {}", flag_topology);
-            switch (flag_topology) {
+        if (option_topology > 0) {
+            spdlog::get("console")->info("Topology index: {}", option_topology);
+            switch (option_topology) {
                 case 1:
-                    GA_line_2_1::openGACal(2, nodes, esList, swList, nodeMap, links, flows);
+                    GA_line_2_1::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
                     break;
                 case 2:
-                    GA_line_2_2::openGACal(16, nodes, esList, swList, nodeMap, links, flows);
+                    GA_line_2_2::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
+                    break;
                 case 3:
-                    Small4SwRing::openGACal(16, nodes, esList, swList, nodeMap, links, flows);
+                    Small4SwRing::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
                     break;
                 default:
-                    openGACal(24, nodes, esList, swList, nodeMap, links, flows);
+                    openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
+                    break;
             }
         }
         MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small",
                              nodes, esList, swList, nodeMap, links, flows);
-
+        std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/*";
+        system(delete_file.c_str());
         EA::Chronometer timer;
         timer.tic();
 
@@ -88,7 +96,7 @@ int main(int argc, char **argv) {
         ga_obj.solve();
 
         std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
-        myobject.save_results(ga_obj, "/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small");
+        myobject.save_results(ga_obj, option_ned_file);
 
         spd::drop_all();
     } catch (const spd::spdlog_ex &ex) {
