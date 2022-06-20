@@ -81,6 +81,8 @@ public:
 
     void sortGCL();
 
+    void mergeGCL();
+
     bool checkGCLCollision();
 
     [[nodiscard]] uint64_t getQsize() const;

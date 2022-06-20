@@ -2,6 +2,7 @@
 // Created by faniche on 2022/1/22.
 //
 
+#include <spdlog/spdlog.h>
 #include "Port.h"
 
 GateControlEntry::GateControlEntry() {
@@ -90,6 +91,18 @@ bool Port::compareGCL(const GateControlEntry & a, const GateControlEntry &b){
 
 void Port::sortGCL() {
     std::sort(gateControlList.begin(), gateControlList.end(), compareGCL);
+}
+
+void Port::mergeGCL() {
+    for (int i = 0; i < gateControlList.size() && (i + 1) < gateControlList.size(); ++i) {
+        if (gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue() > gateControlList[i + 1].getStartTime()) {
+            spdlog::get("console")->debug("merge {} {}", gateControlList[i].getStartTime(), gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue());
+            uint64_t len = gateControlList[i + 1].getStartTime() + gateControlList[i + 1].getTimeIntervalValue() - gateControlList[i].getStartTime();
+            gateControlList[i].setTimeIntervalValue(len);
+            gateControlList[i].setGateStatesValue(4, GATE_OPEN);
+            gateControlList.erase(gateControlList.begin() + (i + 1));
+        }
+    }
 }
 
 bool Port::checkGCLCollision() {

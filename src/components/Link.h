@@ -48,6 +48,8 @@ public:
 
     void sortGCL();
 
+    void mergeGCL();
+
     bool checkGCLCollision();
 
     [[nodiscard]] const Port &getDestPort() const;

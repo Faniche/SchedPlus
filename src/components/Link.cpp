@@ -60,6 +60,10 @@ void DirectedLink::sortGCL() {
     this->srcPort.sortGCL();
 }
 
+void DirectedLink::mergeGCL() {
+    this->srcPort.mergeGCL();
+}
+
 bool DirectedLink::checkGCLCollision() {
     return this->srcPort.checkGCLCollision();
 }
