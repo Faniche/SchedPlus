@@ -64,8 +64,12 @@ int main(int argc, char **argv) {
                     break;
             }
         }
+        map<schedplus::PRIORITY_CODE_POINT, vector<uint32_t>> flowGroupPcp;
+        for (int i = 0; i < flows.size(); ++i) {
+            flowGroupPcp[flows[i].getPriorityCodePoint()].emplace_back(i);
+        }
         MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small",
-                             nodes, esList, swList, nodeMap, links, flows);
+                             nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
         std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/*";
         system(delete_file.c_str());
         EA::Chronometer timer;
@@ -76,7 +80,7 @@ int main(int argc, char **argv) {
         ga_obj.multi_threading = true;
         ga_obj.dynamic_threading = true;
         ga_obj.verbose = true;
-        ga_obj.population = 20;
+        ga_obj.population = 50;
         ga_obj.generation_max = 100;
 
         using std::bind;

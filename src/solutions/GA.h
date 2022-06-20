@@ -168,7 +168,7 @@ void openGACal(const size_t flow_num,
             flow.addDeliveryGuarantee(deliveryGuarantee);
         }
         flow.setFrameLength(Flow::getRandomFrameLength(pcp));
-        util.calAllRoutes(nodeMap, flow, graph, links);
+        Util::calAllRoutes(nodeMap, flow, graph, links);
         flows.push_back(flow);
         oss.str("");
         flow.toString(oss);
