@@ -13,18 +13,22 @@ using std::vector;
 using std::map;
 
 struct TTFlows {
-    std::vector<uint64_t> offsets;
-    std::vector<uint64_t> selected_route_idx;
+    vector<uint64_t> offsets;
+    vector<uint64_t> selected_route_idx;
 };
 
 struct MyMiddleCost {
-    // This is where the results of simulation
-    // is stored but not yet finalized.
 
-    //       link_id                          start     interval
-    std::map<uint32_t , std::vector<std::pair<uint64_t , uint64_t>>> transmit_intervals;
+    /*   flow_id     snd_times       hop     offset     */
+    map<uint32_t, map<uint64_t , map<uint8_t, uint64_t>>> p6_traffic_offsets;
 
-    std::map<uint32_t, uint64_t> link_hyperperiod;
+    /*   flow_id     snd_times       hop     offset     */
+    map<uint32_t, map<uint64_t, map<uint8_t, uint64_t>>> p5_traffic_offsets;
+
+    /*   flow_id     snd_times   e2e  */
+    map<uint32_t, map<uint64_t, uint64_t>> p5_e2e;
+
+    map<uint32_t, uint64_t> link_hyperperiod;
 //    map<uint32_t, vector<map<uint32_t ,vector<map<uint64_t ,vector<map<uint32_t ,vector<map<uint32_t ,vector<uint64_t >>>>>>>>>> flow_collision;
 
     // the minimum variance of generation
