@@ -89,7 +89,7 @@ public:
         Graph::initGraph(nodeMap, links, graph);
 
         Util util;
-        for (int i = 1; i <= flow_num; ++i) {
+        for (int i = 0; i < flow_num; ++i) {
             node_idx a, b;
             a = i % 8;
             b = (a + 3)  % 8;

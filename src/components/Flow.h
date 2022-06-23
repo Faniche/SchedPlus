@@ -12,6 +12,8 @@
 #include "../Route.h"
 #include "../Delivery/DeliveryGuarantee.h"
 
+using std::vector;
+
 class Flow {
 private:
     uint32_t id;
@@ -30,7 +32,7 @@ private:
     schedplus::PRIORITY_CODE_POINT priorityCodePoint;
 
     /* The delivery guarantee */
-    std::vector<DeliveryGuarantee> deliveryGuarantees;
+    vector<DeliveryGuarantee> deliveryGuarantees;
 
     /* The source node of a Flow */
     Node *src;
@@ -47,13 +49,13 @@ private:
     /* the Flow is multicast or not */
     bool multicast = false;
 
-    std::vector<Route> routes;
+    vector<Route> routes;
 
-//    std::vector<std::vector<DirectedLink *>> routes;
+//    vector<vector<DirectedLink *>> routes;
 
     uint16_t selectedRouteInx = 0;
 
-    static const std::vector<uint8_t> randPeriod;
+    static const vector<uint8_t> randPeriod;
 
 public:
     Flow(uint32_t _id, uint64_t period, schedplus::PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
@@ -66,7 +68,7 @@ public:
 
     [[nodiscard]] uint64_t getPeriod() const;
 
-    [[nodiscard]] const std::vector<DeliveryGuarantee> &getDeliveryGuarantees() const;
+    [[nodiscard]] const vector<DeliveryGuarantee> &getDeliveryGuarantees() const;
 
     void addDeliveryGuarantee(const DeliveryGuarantee &deliveryGuarantee);
 
@@ -94,7 +96,7 @@ public:
 
     [[nodiscard]] bool isMulticast() const;
 
-    [[nodiscard]] const std::vector<Route> &getRoutes() const;
+    [[nodiscard]] const vector<Route> &getRoutes() const;
 
     void addRoutes(const Route &_route);
 

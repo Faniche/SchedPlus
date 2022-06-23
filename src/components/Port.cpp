@@ -2,8 +2,10 @@
 // Created by faniche on 2022/1/22.
 //
 
+//#include <spdlog/spdlog.h>
 #include <spdlog/spdlog.h>
 #include "Port.h"
+#include "../include/type.h"
 
 GateControlEntry::GateControlEntry() {
     gateStatesValue.assign(8, GATE_OPEN);
@@ -94,12 +96,19 @@ void Port::sortGCL() {
 }
 
 void Port::mergeGCL() {
+    spdlog::get("console")->set_level(spdlog::level::info);
     for (int i = 0; i < gateControlList.size() && (i + 1) < gateControlList.size(); ++i) {
         if (gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue() > gateControlList[i + 1].getStartTime()) {
-            spdlog::get("console")->debug("merge {} {}", gateControlList[i].getStartTime(), gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue());
-            uint64_t len = gateControlList[i + 1].getStartTime() + gateControlList[i + 1].getTimeIntervalValue() - gateControlList[i].getStartTime();
-            gateControlList[i].setTimeIntervalValue(len);
+            spdlog::get("console")->debug("before merge: i.start = {}, i.finish = {}, (i + 1).start = {}, (i + 1).len = {}",
+                                gateControlList[i].getStartTime(), gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue(),
+                                gateControlList[i + 1].getStartTime(), gateControlList[i + 1].getStartTime() + gateControlList[i + 1].getTimeIntervalValue());
+            uint64_t queue_delay = gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue() - gateControlList[i + 1].getStartTime();
+            uint64_t finish_time = gateControlList[i + 1].getStartTime() + gateControlList[i + 1].getTimeIntervalValue() + queue_delay;
+            uint64_t time_interval = finish_time - gateControlList[i].getStartTime() + schedplus::IFG_TIME;
+            gateControlList[i].setTimeIntervalValue(time_interval);
             gateControlList[i].setGateStatesValue(4, GATE_OPEN);
+            spdlog::get("console")->debug("after merge: i.start = {}, i.finish = {}",
+                                gateControlList[i].getStartTime(), gateControlList[i].getStartTime() + gateControlList[i].getTimeIntervalValue());
             gateControlList.erase(gateControlList.begin() + (i + 1));
         }
     }

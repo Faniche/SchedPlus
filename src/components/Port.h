@@ -4,11 +4,16 @@
 
 #ifndef SCHEDPLUS_PORT_H
 #define SCHEDPLUS_PORT_H
-
+//
+//#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+//#define SPDLOG_TRACE_ON
+//#define SPDLOG_DEBUG_ON
 
 #include <uuid/uuid.h>
 #include <vector>
-#include <mutex>
+#include <cstdint>
+#include <string>
+//#include <mutex>
 
 typedef bool GATE_EVENT;
 #define GATE_CLOSE  false

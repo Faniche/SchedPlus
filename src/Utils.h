@@ -43,7 +43,7 @@ public:
     static uint64_t getHyperPeriod(std::vector<std::reference_wrapper<Flow>> &flows, std::ostringstream &oss) {
         oss.str("");
         uint64_t hyperPeriod = 0, a = 0, b;
-        for (auto & flow : flows) {
+        for (auto &flow: flows) {
             if (flow.get().getPeriod() != 0) {
                 if (a == 0) {
                     oss << "period: {" << flow.get().getPeriod();
@@ -102,7 +102,8 @@ public:
     * @param graph : Integer adjacency matrix of all node
     * @param alllinks : all alllinks vector
     **/
-    static void calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
+    static void
+    calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
         size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
         if (srcIdx == INT64_MAX)
             spdlog::get("console")->error("can not find the index of node: %s", flow.getSrc()->getName());
@@ -117,7 +118,7 @@ public:
             uint64_t tmp = 0;
             for (int j = 1; j < idxRoute.size(); ++j) {
                 destIdx = idxRoute[j];
-                DirectedLink* link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
+                DirectedLink *link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
                 if (link == nullptr) {
                     spdlog::get("console")->error("Null pointer error.");
                     exit(EXIT_FAILURE);
@@ -135,6 +136,37 @@ public:
             flow.addRoutes(route);
         }
 
+    }
+
+    static bool isPortInUse(const Port &port, const vector<std::reference_wrapper<Flow>> &flows) {
+        for (auto const &flow: flows) {
+            for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
+                if (uuid_compare(link.get().getSrcPort().getId(), port.getId()) == 0)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static void saveFlows(const std::vector<Flow> &flows, const std::string &output_location) {
+        std::string file_path = output_location;
+        file_path.append("/flows.txt");
+        std::ofstream oss(file_path);
+        oss << std::left << std::setw(5) << "id"
+            << std::left << std::setw(10) << "offset"
+            << std::left << std::setw(10) << "period"
+            << std::left << std::setw(5) << "pcp"
+            << std::left << std::setw(8) << "src"
+            << std::left << std::setw(8) << "dest" << std::endl;
+        for (auto const &flow: flows) {
+            oss << std::left << std::setw(5) << flow.getId()
+                << std::left << std::setw(10) << flow.getOffset()
+                << std::left << std::setw(10) << flow.getPeriod()
+                << std::left << std::setw(5) << flow.getPriorityCodePoint()
+                << std::left << std::setw(8) << flow.getSrc()->getName()
+                << std::left << std::setw(8) << flow.getDest()->getName() << std::endl;
+        }
+        oss.close();
     }
 
 };
