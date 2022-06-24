@@ -132,40 +132,31 @@ private:
         return true;
     }
 
-    bool checkP6Collision (const map<uint32_t, vector<std::pair<uint32_t, uint8_t>>> &link_flows,
-                           std::ostringstream &oss,
-                           map<uint32_t, map<uint8_t, uint64_t>> &traffic_offsets) {
-        oss.str("");
-        for (auto const &[link_id, flows_id_hop]: link_flows) {
-            uint8_t mt = links[link_id].get().getSrcPort().getMacrotick();
-            for (int i = 0; i < flows_id_hop.size(); ++i) {
-                uint32_t fi_id = flows_id_hop[i].first;
-                auto const &flow_i = flows[fi_id].get();
-                uint64_t fi_period = flow_i.getPeriod();
-                uint64_t fi_len = flow_i.getFrameLength() * mt;
-                uint8_t hop_i = flows_id_hop[i].second;
-                uint64_t fi_mid = traffic_offsets[fi_id][hop_i] + fi_len / 2;
-                for (int j = i + 1; j < flows_id_hop.size(); ++j) {
-                    uint32_t fj_id = flows_id_hop[j].first;
-                    auto const &flow_j = flows[fj_id].get();
-                    uint64_t fj_period = flow_j.getPeriod();
-                    uint64_t fj_len = flow_j.getFrameLength() * mt;
-                    uint8_t hop_j = flows_id_hop[j].second;
-                    uint64_t fj_mid = traffic_offsets[fj_id][hop_j] + fj_len / 2;
+    bool checkP6Collision (const TTFlows &p, MyMiddleCost &c) {
+        for (auto const &flow_id: flowGroupPcp[schedplus::P6]) {
+            auto const &flow = flows[flow_id].get();
+            auto const &route = flows[flow_id].get().getRoutes()[p.selected_route_idx[flow_id]].getLinks();
+            for (int i = 0; i < route.size(); ++i) {
+                uint32_t link_id = route[i].get().getId();
+                uint64_t start = (c.p6_traffic_offsets[flow_id][i] % flow.getPeriod()) % c.link_min_period[link_id];
+                uint64_t end = ((c.p6_traffic_offsets[flow_id][i] + flow.getFrameLength() * route[i].get().getSrcPort().getMacrotick()) % flow.getPeriod()) % c.link_min_period[link_id];
+                c.link_ring[link_id].emplace_back(std::pair(start, end));
+            }
+        }
 
-                    if (!checkCollisionHelp(fi_period, fi_mid, fi_len, fj_period, fj_mid, fj_len)) {
-                        oss << std::endl << "====collision check failed===="<< std::endl;
-                        oss << "flow_i:    " << std::left << std::setw(10) << flow_i.getId()
-                            << "flow_j:    " << std::left << std::setw(10) << flow_j.getId() << std::endl;
-                        oss << "fi_period: " << std::left << std::setw(10) << fi_period
-                            << "fj_period: " << std::left << std::setw(10) << fj_period << std::endl;
-                        oss << "fi_hop:    " << std::left << std::setw(10) << i
-                            << "fj_hop:    " << std::left << std::setw(10) << j << std::endl;
-                        oss << "=============================="<< std::endl;
-                        SPDLOG_LOGGER_DEBUG(spdlog::get("console"), oss.str());
-                        oss.str("");
-                        return false;
-                    }
+        for (auto &item: c.link_ring)
+            std::sort(item.second.begin(), item.second.end(), compIntervals);
+
+        for (auto &[link_id, intervals]: c.link_ring) {
+            if ((intervals[intervals.size() - 1].second + schedplus::IFG_TIME > c.link_min_period[link_id])
+                    && ((intervals[intervals.size() - 1].second + schedplus::IFG_TIME) % c.link_min_period[link_id] > intervals[0].first)) {
+                SPDLOG_LOGGER_DEBUG(spdlog::get("console"), "P6 collision check failed");
+                return false;
+            }
+            for (int i = 0; i < intervals.size() - 1; ++i) {
+                if (intervals[i].second + schedplus::IFG_TIME > intervals[i + 1].first) {
+                    SPDLOG_LOGGER_DEBUG(spdlog::get("console"), "P6 collision check failed");
+                    return false;
                 }
             }
         }
@@ -186,6 +177,18 @@ private:
     }
 
     bool checkQueueCache (const TTFlows &p, MyMiddleCost &c, uint64_t &max_e2e, std::ostringstream &oss) {
+        for (auto const &flow_id: flowGroupPcp[schedplus::P5]) {
+            auto const &flow = flows[flow_id].get();
+            auto const &route = flows[flow_id].get().getRoutes()[p.selected_route_idx[flow_id]].getLinks();
+            for (size_t i = 0; i < fi_send_times; ++i)
+                c.p5_traffic_offsets[flow_id][i][0] = p.offsets[flow_id] + i * flow_i.getPeriod();
+            for (int i = 0; i < route.size(); ++i) {
+                uint32_t link_id = route[i].get().getId();
+                uint64_t start = (c.p5_traffic_offsets[flow_id][i] % flow.getPeriod()) % c.link_min_period[link_id];
+                uint64_t end = ((c.p6_traffic_offsets[flow_id][i] + flow.getFrameLength() * route[i].get().getSrcPort().getMacrotick()) % flow.getPeriod()) % c.link_min_period[link_id];
+                c.link_ring[link_id].emplace_back(std::pair(start, end));
+            }
+        }
         for (auto &flow_id: flowGroupPcp[schedplus::P5]) {
             auto const &flow_i = flows[flow_id].get();
             vector<uint32_t> flow_ids{flow_id};
@@ -301,13 +304,12 @@ private:
         }
     }
 
-    bool checkP6DDL (const vector<uint64_t> &selected_route_idx,
-                     const vector<uint64_t> &offsets,
+    bool checkP6DDL (const TTFlows &p,
                      uint64_t &max_ddl) {
         for (auto const &flow_id: flowGroupPcp[schedplus::P6]) {
             auto const &flow = flows[flow_id].get();
-            uint64_t e2e = flow.getRoutes()[selected_route_idx[flow_id]].getE2E();
-            uint64_t ddl = offsets[flow_id] + e2e;
+            uint64_t e2e = flow.getRoutes()[p.selected_route_idx[flow_id]].getE2E();
+            uint64_t ddl = p.offsets[flow_id] + e2e;
             /* Check delivery guarantees */
             if (ddl > flow.getDeliveryGuarantees()[0].getLowerVal())
                 return false;
@@ -360,67 +362,51 @@ public:
                     flow.get().getFrameLength() * ((EndSystem *) flow.get().getSrc())->getPort().getMacrotick();
             uint64_t up_bound = flow.get().getPeriod() - srcTransDelay;
             uint64_t offset = up_bound * rnd01();
-//            uint64_t e2e = flow.get().getRoutes()[route_idx].getE2E();
-//            if (flow.get().getPriorityCodePoint() == schedplus::P6) {
-//                if (flow.get().getDeliveryGuarantees()[0].getLowerVal() <= e2e)
-//                    offset = UINT64_MAX;
-//                else {
-//                    uint64_t up_bound = std::min((flow.get().getDeliveryGuarantees()[0].getLowerVal() - e2e), (flow.get().getPeriod() - srcTransDelay));
-//                    offset = up_bound * rnd01();
-//                }
-//            } else if (flow.get().getPriorityCodePoint() == schedplus::P5) {
-//                if (flow.get().getDeliveryGuarantees()[0].getLowerVal() <= e2e)
-//                    offset = UINT64_MAX;
-//                else {
-//                    uint64_t up_bound = std::min((flow.get().getDeliveryGuarantees()[0].getLowerVal() - e2e), (flow.get().getPeriod() - srcTransDelay));
-//                    offset = up_bound * rnd01();
-//                }
-//
-//
-//                /* Transmit delay of frame, unit: ns */
-////                      delay     =  frame_length   *    port_macrotick
-//                offset = (flow.get().getPeriod() - srcTransDelay) * rnd01();
-//            }
             p.offsets[flow_id] = offset;
         }
     }
 
     bool eval_solution(const TTFlows &p, MyMiddleCost &c) {
-        spdlog::set_level(spdlog::level::info);
+        spdlog::set_level(spdlog::level::debug);
         /* Check Isochronous traffic ddl guarantee. */
         uint64_t max_ddl = 0, max_e2e = 0;
 
-        if (!checkP6DDL(p.selected_route_idx, p.offsets, max_ddl))  return false;
+        if (!checkP6DDL(p, max_ddl))  return false;
+        if (!checkP5E2E(p.selected_route_idx, max_e2e)) return false;
 
         /* Set send offset of each hop */
         for (auto &flow_id: flowGroupPcp[schedplus::P6]) {
             setEachHopStartTimeP6(flow_id, p.offsets[flow_id], p.selected_route_idx[flow_id],c.p6_traffic_offsets);
         }
 
-        for (auto const &flow_id: flowGroupPcp[schedplus::P6]) {
-            auto const &flow = flows[flow_id].get();
-            for (int i = 0; i < flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks().size(); ++i) {
-                uint32_t link_id =  flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks()[i].get().getId();
+        setLinkHyperperiod(p.selected_route_idx, c.link_hyperperiod);
+        for (int i = 0; i < p.offsets.size(); ++i) {
+            auto const &route = flows[i].get().getRoutes()[p.selected_route_idx[i]].getLinks();
+            for (auto const &link: route) {
+                c.link_flowid[link.get().getId()].emplace_back(i);
+            }
+        }
+
+        for (auto const &[link_id, flows_id]: c.link_flowid) {
+            for (auto const &flow_id: flows_id) {
+                if (!c.link_min_period.contains(link_id) || c.link_min_period[link_id] > flows[flow_id].get().getPeriod())
+                    c.link_min_period[link_id] = flows[flow_id].get().getPeriod();
+            }
+        }
+
+        if (!checkP6Collision(p, c))
+            return false;
+
+        for (auto const &flow: flows) {
+            uint32_t flow_id = flow.get().getId();
+            for (int i = 0; i < flow.get().getRoutes()[p.selected_route_idx[flow_id]].getLinks().size(); ++i) {
+                uint32_t link_id =  flow.get().getRoutes()[p.selected_route_idx[flow_id]].getLinks()[i].get().getId();
                 c.link_flows[link_id].emplace_back(std::pair(flow_id, i));
             }
         }
 
         std::ostringstream oss("");
 
-        if (!checkP6Collision(c.link_flows, oss, c.p6_traffic_offsets))
-            return false;
-
-        if (!checkP5E2E(p.selected_route_idx, max_e2e))
-            return false;
-
-        for (auto const &flow_id: flowGroupPcp[schedplus::P5]) {
-            auto const &flow = flows[flow_id].get();
-            for (int i = 0; i < flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks().size(); ++i) {
-                uint32_t link_id =  flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks()[i].get().getId();
-                c.link_flows[link_id].emplace_back(std::pair(flow_id, i));
-            }
-        }
-        setLinkHyperperiod(p.selected_route_idx, c.link_hyperperiod);
         for (auto const &[link_id, flows_id_hop]: c.link_flows) {
             for (auto const &[flow_id, hop]: flows_id_hop) {
                 if (c.link_gcl_size.contains(link_id)) {
