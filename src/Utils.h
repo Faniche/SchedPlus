@@ -14,9 +14,12 @@
 #include <random>
 #include <spdlog/spdlog.h>
 #include <queue>
+#include "../lib/json/json.hpp"
 #include "components/Flow.h"
 #include "Route.h"
+#include "include/env.h"
 
+using json = nlohmann::json;
 class Util {
 private:
     std::default_random_engine generator;
@@ -104,10 +107,10 @@ public:
     **/
     static void
     calAllRoutes(std::map<size_t, Node *> &map, Flow &flow, Graph &graph, std::vector<DirectedLink> &alllinks) {
-        size_t srcIdx = Node::nodeToIdx(map, flow.getSrc());
+        size_t srcIdx = flow.getSrc()->getId();
         if (srcIdx == INT64_MAX)
             spdlog::get("console")->error("can not find the index of node: %s", flow.getSrc()->getName());
-        size_t destIdx = Node::nodeToIdx(map, flow.getDest());
+        size_t destIdx = flow.getDest()->getId();
         if (destIdx == INT64_MAX)
             spdlog::get("console")->error("can not find the index of node: %s", flow.getDest()->getName());
         std::vector<std::vector<size_t>> routes;
@@ -118,7 +121,7 @@ public:
             uint64_t tmp = 0;
             for (int j = 1; j < idxRoute.size(); ++j) {
                 destIdx = idxRoute[j];
-                DirectedLink *link = DirectedLink::nodesIdxToLink(map.at(srcIdx), map.at(destIdx), alllinks);
+                DirectedLink *link = DirectedLink::nodesIdxToLink(map[srcIdx], map[destIdx], alllinks);
                 if (link == nullptr) {
                     spdlog::get("console")->error("Null pointer error.");
                     exit(EXIT_FAILURE);
@@ -148,27 +151,25 @@ public:
         return false;
     }
 
-    static void saveFlows(const std::vector<Flow> &flows, const std::string &output_location) {
-        std::string file_path = output_location;
-        file_path.append("/flows.txt");
+    static void saveFlows(const std::vector<Flow> &flows) {
+        std::string file_path = FLOW_FILE_LOCATION;
+        file_path.append("/flows.json");
         std::ofstream oss(file_path);
-        oss << std::left << std::setw(5) << "id"
-            << std::left << std::setw(10) << "offset"
-            << std::left << std::setw(10) << "period"
-            << std::left << std::setw(5) << "pcp"
-            << std::left << std::setw(8) << "src"
-            << std::left << std::setw(8) << "dest" << std::endl;
+        json jflows;
         for (auto const &flow: flows) {
-            oss << std::left << std::setw(5) << flow.getId()
-                << std::left << std::setw(10) << flow.getOffset()
-                << std::left << std::setw(10) << flow.getPeriod()
-                << std::left << std::setw(5) << flow.getPriorityCodePoint()
-                << std::left << std::setw(8) << flow.getSrc()->getName()
-                << std::left << std::setw(8) << flow.getDest()->getName() << std::endl;
+            json jflow;
+            jflow["id"] = flow.getId();
+            jflow["offset"] = flow.getOffset();
+            jflow["period"] = flow.getPeriod();
+            jflow["length"] = flow.getFrameLength();
+            jflow["pcp"] = flow.getPriorityCodePoint();
+            jflow["src"] = flow.getSrc()->getId();
+            jflow["dest"] = flow.getDest()->getId();
+            jflows.push_back(jflow);
         }
+        oss << jflows;
         oss.close();
     }
-
 };
 
 #endif //SCHEDPLUS_UTILS_H

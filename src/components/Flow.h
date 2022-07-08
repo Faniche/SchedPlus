@@ -58,6 +58,9 @@ private:
     static const vector<uint8_t> randPeriod;
 
 public:
+
+    Flow(uint32_t _id, uint64_t offset, uint64_t period, uint64_t length, schedplus::PRIORITY_CODE_POINT pcp);
+
     Flow(uint32_t _id, uint64_t period, schedplus::PRIORITY_CODE_POINT priorityCodePoint, Node *src, Node *dest, bool isCritical, uint8_t rep, bool multicast);
 
     [[nodiscard]] uint64_t getId() const;
@@ -87,6 +90,10 @@ public:
     [[nodiscard]] schedplus::PRIORITY_CODE_POINT getPriorityCodePoint() const;
 
     [[nodiscard]] Node *getSrc() const;
+
+    void setSrc(Node *src);
+
+    void setDest(Node *dest);
 
     [[nodiscard]] Node *getDest() const;
 

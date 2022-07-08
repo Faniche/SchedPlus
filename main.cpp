@@ -1,11 +1,15 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#define SPDLOG_TRACE_ON
+#define SPDLOG_DEBUG_ON
+
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
 #include "src/solutions/GA.h"
 #include "src/solutions/GA_4sw_ring.h"
 #include "src/solutions/GA_line_2_1.h"
 #include "src/solutions/GA_line_2_2.h"
 #include "lib/CLI11/include/CLI/CLI.hpp"
+#include "src/solutions/NoWait.h"
 
 namespace spd = spdlog;
 
@@ -18,27 +22,28 @@ int main(int argc, char **argv) {
     app.add_option("-n, --ned", option_ned_file, "Net description file name");
     int option_flow_number = 2;
     app.add_option("-f, --flows", option_flow_number, "The number of flow");
-
+    bool flag_debug = {false};
+    app.add_flag("-d, --debug", flag_debug, "debug mode");
+    bool flag_random = {false};
+    app.add_flag("-r, --random", flag_random, "use random flow for test");
     try {
         CLI11_PARSE(app, argc, argv);
     } catch (CLI::ParseError error) {
         app.exit(error);
     }
     try {
-        auto console = spd::stdout_color_mt("console");
-        spd::set_pattern("[%H:%M:%S][%^%l%$] [thread %t] %v");
-        spd::set_level(spd::level::info); //Set global log level to info
+//        auto console = spd::stdout_color_mt("console");
+        auto sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
+        auto console = std::make_shared<spdlog::logger>("console", sink);
+        console->set_level(spdlog::level::trace);
+        spd::set_default_logger(console);
+        spd::set_pattern("[%H:%M:%S] [%^%l%$] %s:%# %v");
 
-        // Create basic file logger (not rotated)
-        auto my_logger = spd::basic_logger_mt("basic_logger", "schedule.txt");
-        my_logger->info("Some log message");
-
-        console->set_level(spd::level::debug); // Set specific logger's log level
 
         // Compile time log levels
         // define SPDLOG_DEBUG_ON or SPDLOG_TRACE_ON
-        SPDLOG_TRACE(console, "Enabled only #ifdef SPDLOG_TRACE_ON..{} ,{}", 1, 3.23);
-        SPDLOG_DEBUG(console, "Enabled only #ifdef SPDLOG_DEBUG_ON.. {} ,{}", 1, 3.23);
+        SPDLOG_LOGGER_TRACE(console, "Enabled only #ifdef SPDLOG_TRACE_ON..{} ,{}", 1, 3.23);
+        SPDLOG_LOGGER_DEBUG(console, "Enabled only #ifdef SPDLOG_DEBUG_ON.. {} ,{}", 1, 3.23);
 
         std::vector<Node *> nodes;
         std::vector<Node *> esList;
@@ -47,8 +52,8 @@ int main(int argc, char **argv) {
         std::vector<DirectedLink> links;
         std::vector<Flow> flows;
 
-        if (option_topology > 0) {
-            spdlog::get("console")->info("Topology index: {}", option_topology);
+        spdlog::get("console")->info("Topology index: {}", option_topology);
+        if (flag_random) {
             switch (option_topology) {
                 case 1:
                     GA_line_2_1::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
@@ -63,13 +68,30 @@ int main(int argc, char **argv) {
                     openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
                     break;
             }
+            Util::saveFlows(flows);
+        } else {
+            switch (option_topology) {
+                case 1:
+                    GA_line_2_1::openGACal(nodes, esList, swList, nodeMap, links, flows);
+                    break;
+                case 2:
+                    GA_line_2_2::openGACal(nodes, esList, swList, nodeMap, links, flows);
+                    break;
+                case 3:
+                    Small4SwRing::openGACal(nodes, esList, swList, nodeMap, links, flows);
+                    break;
+                default:
+                    openGACal(nodes, esList, swList, nodeMap, links, flows);
+                    break;
+            }
         }
         map<schedplus::PRIORITY_CODE_POINT, vector<uint32_t>> flowGroupPcp;
         for (int i = 0; i < flows.size(); ++i) {
             flowGroupPcp[flows[i].getPriorityCodePoint()].emplace_back(i);
         }
-        MyFunctions myobject("/home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small",
-                             nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
+
+//        MyFunctions myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
+        NoWait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
         std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/*";
         system(delete_file.c_str());
         EA::Chronometer timer;
@@ -77,9 +99,9 @@ int main(int argc, char **argv) {
 
         GA_Type ga_obj;
         ga_obj.problem_mode = EA::GA_MODE::NSGA_III;
-        ga_obj.multi_threading = true;
-        ga_obj.dynamic_threading = true;
-        ga_obj.verbose = true;
+        ga_obj.multi_threading = !flag_debug;
+        ga_obj.dynamic_threading = !flag_debug;
+        ga_obj.verbose = false;
         ga_obj.population = 50;
         ga_obj.generation_max = 100;
 
@@ -88,24 +110,32 @@ int main(int argc, char **argv) {
         using std::placeholders::_2;
         using std::placeholders::_3;
 
-        ga_obj.calculate_MO_objectives = bind(&MyFunctions::calculate_MO_objectives, &myobject, _1);
-        ga_obj.init_genes =  bind(&MyFunctions::init_genes, &myobject, _1, _2);
-        ga_obj.eval_solution = bind(&MyFunctions::eval_solution, &myobject, _1, _2);
-        ga_obj.mutate = bind(&MyFunctions::mutate, &myobject, _1, _2, _3);
-        ga_obj.crossover = bind(&MyFunctions::crossover, &myobject, _1, _2, _3);
-        ga_obj.MO_report_generation = bind(&MyFunctions::MO_report_generation, &myobject, _1, _2, _3);
+//        ga_obj.calculate_MO_objectives = bind(&MyFunctions::calculate_MO_objectives, &myobject, _1);
+//        ga_obj.init_genes =  bind(&MyFunctions::init_genes, &myobject, _1, _2);
+//        ga_obj.eval_solution = bind(&MyFunctions::eval_solution, &myobject, _1, _2);
+//        ga_obj.mutate = bind(&MyFunctions::mutate, &myobject, _1, _2, _3);
+//        ga_obj.crossover = bind(&MyFunctions::crossover, &myobject, _1, _2, _3);
+//        ga_obj.MO_report_generation = bind(&MyFunctions::MO_report_generation, &myobject, _1, _2, _3);
+
+        ga_obj.calculate_MO_objectives = bind(&NoWait::calculate_MO_objectives, &myobject, _1);
+        ga_obj.init_genes =  bind(&NoWait::init_genes, &myobject, _1, _2);
+        ga_obj.eval_solution = bind(&NoWait::eval_solution, &myobject, _1, _2);
+        ga_obj.mutate = bind(&NoWait::mutate, &myobject, _1, _2, _3);
+        ga_obj.crossover = bind(&NoWait::crossover, &myobject, _1, _2, _3);
+        ga_obj.MO_report_generation = bind(&NoWait::MO_report_generation, &myobject, _1, _2, _3);
 
         ga_obj.crossover_fraction = 0.9;
-        ga_obj.mutation_rate = 0.2;
+        ga_obj.mutation_rate = 0.4;
         ga_obj.solve();
 
         std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
         myobject.save_results(ga_obj, option_ned_file);
 
-        spd::drop_all();
-    } catch (const spd::spdlog_ex &ex) {
+    } catch (const spdlog::spdlog_ex &ex) {
         std::cout << "Log init failed: " << ex.what() << std::endl;
+        spdlog::shutdown();
         return 1;
     }
+    spdlog::shutdown();
     return 0;
 }

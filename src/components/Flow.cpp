@@ -10,6 +10,13 @@
 
 const std::vector<uint8_t> Flow::randPeriod{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18, 20};
 
+Flow::Flow(uint32_t _id, uint64_t offset, uint64_t period, uint64_t length, schedplus::PRIORITY_CODE_POINT pcp) :
+        id(_id),
+        offset(offset),
+        period(period),
+        frameLength(length),
+        priorityCodePoint(pcp){}
+
 /**
  * @param period                Period of frame
  * @param priorityCodePoint     PCP of flow
@@ -247,5 +254,13 @@ uint16_t Flow::getRandomFrameLength(schedplus::PRIORITY_CODE_POINT pcp) {
     uint16_t a = randFrameLen(engine);
     a -= a % 10;
     return a;
+}
+
+void Flow::setSrc(Node *_src) {
+    Flow::src = _src;
+}
+
+void Flow::setDest(Node *_dest) {
+    Flow::dest = _dest;
 }
 
