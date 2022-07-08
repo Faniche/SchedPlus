@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 #include "../components/Flow.h"
-#include "../../lib/openGA.hpp"
+#include "../../lib/openGA/openGA.hpp"
 #include "GA_Solution.h"
 #include "MyFunctions.h"
 
@@ -88,6 +88,79 @@ public:
             oss.str("");
             flow.toString(oss);
             spdlog::get("console")->info("flow_{}: {}", i, oss.str());
+        }
+    }
+
+    static void openGACal(std::vector<Node *> &nodes,
+                          std::vector<Node *> &esList,
+                          std::vector<Node *> &swList,
+                          std::map<node_idx , Node *> &nodeMap,
+                          std::vector<DirectedLink> &links,
+                          std::vector<Flow> &flows) {
+        std::ostringstream oss;
+        /* End systems */
+        Node *es00 = createNode(END_SYSTEM, "es00", 0);
+        Node *es01 = createNode(END_SYSTEM, "es01", 0);
+
+        /* Switches */
+        Node *sw0 = createNode(SWITCH, "switch0", 30000);
+        Node *sw1 = createNode(SWITCH, "switch1", 30000);
+        nodes.insert(nodes.end(), {es00, es01, sw0, sw1});
+        for (int i = 0; i < nodes.size(); ++i) {
+            nodes[i]->setId(i);
+        }
+        esList.insert(esList.end(), {es00, es01});
+        swList.insert(swList.end(), {sw0, sw1});
+        for (node_idx i = 0; i < nodes.size(); ++i) {
+            nodeMap[i] = nodes[i];
+        }
+
+        /* Links connected end systems to switches */
+        FullDuplexLink link_00(es00, sw0, ((EndSystem *) es00)->getPort(), ((Switch *) sw0)->getPorts()[0]);
+        FullDuplexLink link_01(es01, sw1, ((EndSystem *) es01)->getPort(), ((Switch *) sw1)->getPorts()[0]);
+        /* Links connected four switches */
+        FullDuplexLink link_02(sw0, sw1, ((Switch *) sw0)->getPorts()[1], ((Switch *) sw1)->getPorts()[1]);
+        /* Add links to vectors */
+        links.insert(links.end(), {link_00.getLinks()[0], link_00.getLinks()[1],
+                                   link_01.getLinks()[0], link_01.getLinks()[1],
+                                   link_02.getLinks()[0], link_02.getLinks()[1]});
+        for (uint32_t i = 0; i < links.size(); ++i) {
+            links[i].setId(i);
+        }
+        /* Adjacency matrix */
+        /* Init a graph of int value to calculate routes later*/
+        Graph graph(nodes.size());
+        Graph::initGraph(nodeMap, links, graph);
+
+        std::string flow_file_path = FLOW_FILE_LOCATION;
+        flow_file_path.append("/flows.json");
+        std::ifstream flow_file(flow_file_path);
+        json jflows;
+        flow_file >> jflows;
+        for (json::iterator item_flow = jflows.begin(); item_flow != jflows.end(); ++item_flow) {
+            for (json::iterator flow_prop = item_flow->begin(); flow_prop != item_flow->end(); ++flow_prop) {
+                Flow flow((*flow_prop)["id"], (*flow_prop)["offset"], (*flow_prop)["period"], (*flow_prop)["length"],
+                          (*flow_prop)["pcp"]);
+                node_idx src = (*flow_prop)["src"];
+                node_idx dest = (*flow_prop)["dest"];
+                flow.setSrc(nodeMap.at(src));
+                flow.setDest(nodeMap.at(dest));
+                if ((*flow_prop)["pcp"] == schedplus::P6) {
+                    /* unit: ns*/
+                    DeliveryGuarantee deliveryGuarantee(DDL, flow.getPeriod());
+                    flow.addDeliveryGuarantee(deliveryGuarantee);
+                } else if ((*flow_prop)["pcp"] == schedplus::P5) {
+                    /* Typically less than 90% of period. */
+                    /* unit: ns*/
+                    DeliveryGuarantee deliveryGuarantee(E2E, flow.getPeriod() / 10);
+                    flow.addDeliveryGuarantee(deliveryGuarantee);
+                }
+                Util::calAllRoutes(nodeMap, flow, graph, links);
+                flows.push_back(flow);
+                oss.str("");
+                flow.toString(oss);
+                spdlog::get("console")->info("flow_{}: {}", flow.getId(), oss.str());
+            }
         }
     }
 };
