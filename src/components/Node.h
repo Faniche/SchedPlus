@@ -18,7 +18,7 @@ enum NODE_TYPE {
 
 class Node {
 protected:
-    uuid_t id{};
+    node_idx id;
     std::string name;
     NODE_TYPE nodeType;
     /* the process delay of node: ns*/
@@ -29,7 +29,9 @@ public:
 
     virtual ~Node();
 
-    [[nodiscard]] const unsigned char *getId() const;
+    [[nodiscard]] node_idx getId() const;
+
+    void setId(node_idx id);
 
     [[nodiscard]] const std::string &getName() const;
 
@@ -38,8 +40,6 @@ public:
     [[nodiscard]] NODE_TYPE getNodeType() const;
 
     virtual std::string& toString() = 0;
-
-    static size_t nodeToIdx (const std::map<size_t, Node *> &map, const Node *node);
 
     [[nodiscard]] uint64_t getDpr() const;
 

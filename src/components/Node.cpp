@@ -8,7 +8,6 @@
 #include "NodeImpl.h"
 
 Node::Node(std::string _name, NODE_TYPE _nodeType, uint64_t _dpr) {
-    uuid_generate(this->id);
     this->name = std::move(_name);
     this->nodeType = _nodeType;
     this->dpr = _dpr;
@@ -16,10 +15,14 @@ Node::Node(std::string _name, NODE_TYPE _nodeType, uint64_t _dpr) {
 
 Node::~Node() = default;
 
-const unsigned char *Node::getId() const {
+
+node_idx Node::getId() const {
     return id;
 }
 
+void Node::setId(node_idx _id) {
+    Node::id = _id;
+}
 const std::string &Node::getName() const {
     return name;
 }
@@ -30,15 +33,6 @@ void Node::setName(std::string &_name) {
 
 NODE_TYPE Node::getNodeType() const {
     return nodeType;
-}
-
-size_t Node::nodeToIdx(const std::map<size_t, Node *> &map, const Node *node) {
-    for (const auto&[key, value]: map) {
-        if (uuid_compare(node->getId(), value->getId()) == 0) {
-            return key;
-        }
-    }
-    return INT64_MAX;
 }
 
 /**
