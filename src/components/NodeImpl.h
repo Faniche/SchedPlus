@@ -49,34 +49,4 @@ enum NODE_SEARCH_STATE {
     VISITED
 };
 
-class GraphNode {
-private:
-    uuid_t id{};
-    std::string name;
-    NODE_SEARCH_STATE state = NOT_VISITED;
-    uint8_t hop = INT8_MAX;
-    uuid_t parent{};
-public:
-
-    GraphNode(const unsigned char *id, std::string name, NODE_SEARCH_STATE state);
-
-    GraphNode(const GraphNode &graphNode);
-
-    [[nodiscard]] const unsigned char *getId() const;
-
-    [[nodiscard]] const std::string &getName() const;
-
-    [[nodiscard]] NODE_SEARCH_STATE getState() const;
-
-    void setState(NODE_SEARCH_STATE _state);
-
-    [[nodiscard]] uint8_t getHop() const;
-
-    void setHop(uint8_t hop);
-
-    [[nodiscard]] const unsigned char *getParent() const;
-
-    void setParent (const unsigned char *parent);
-};
-
 #endif //SCHEDPLUS_NODEIMPL_H
