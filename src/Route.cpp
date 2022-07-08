@@ -72,7 +72,7 @@ void Graph::getAllRoutes(size_t s, size_t d, std::vector<std::vector<size_t>> &r
  **/
 void Graph::initGraph(std::map<size_t, Node *> &map, const std::vector<DirectedLink> &links, Graph &graph) {
     for (auto &link: links) {
-        graph.addEdge(Node::nodeToIdx(map, link.getSrcNode()), Node::nodeToIdx(map, link.getDestNode()));
+        graph.addEdge(link.getSrcNode()->getId(), link.getDestNode()->getId());
     }
 }
 
