@@ -77,8 +77,8 @@ DirectedLink* DirectedLink::nodesIdxToLink(const Node *_srcNode, const Node *_de
 //    spdlog::get("console")->debug("_srcNode: %v, _destNode: %v", _srcNode->getName(), _destNode->getName());
     for (size_t i = 0; i < links.size(); ++i) {
         spdlog::get("console")->debug("comparing link: {}", i);
-        if (uuid_compare(links[i].getSrcNode()->getId(), _srcNode->getId()) == 0
-            && uuid_compare(links[i].getDestNode()->getId(), _destNode->getId()) == 0) {
+        if (links[i].getSrcNode()->getId() == _srcNode->getId()
+            && links[i].getDestNode()->getId() == _destNode->getId()) {
             spdlog::get("console")->debug("link mem address: {}", (void *) &links[i]);
             return &links[i];
         }
