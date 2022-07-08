@@ -6,6 +6,7 @@
 #define SCHEDPLUS_DELIVERYGUARANTEE_H
 
 #include <cstdint>
+#include <string>
 
 //typedef uint64_t ;
 enum DELIVERY_GUARANTEE {
@@ -47,7 +48,7 @@ public:
 
     void setUpperObj(uint64_t upperObj);
 
-
+    static std::string toString (const DeliveryGuarantee& deliveryGuarantee);
 };
 
 
