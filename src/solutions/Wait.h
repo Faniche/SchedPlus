@@ -165,9 +165,12 @@ private:
         for (auto const &flow_id: c.cached_flows) {
             auto const &flow = flows[flow_id].get();
             auto const &route = flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks();
+            size_t route_size = route.size();
             size_t fi_src_snd_times = c.link_hyperperiod[route[0].get().getId()] / flow.getPeriod();
             for (int i = 0; i < fi_src_snd_times; ++i) {
-                uint64_t e2e = c.p5_traffic_offsets[flow_id][i][route.size()] - c.p5_traffic_offsets[flow_id][i][0];
+                uint64_t final = c.p5_traffic_offsets[flow_id][route_size][i];
+                uint64_t first = c.p5_traffic_offsets[flow_id][0][i];
+                uint64_t e2e = final - first;
                 if (e2e > flow.getDeliveryGuarantees()[0].getLowerVal())
                     return false;
                 if (c.e2e < e2e)
@@ -214,25 +217,19 @@ private:
                         if (flow_j.getPriorityCodePoint() != schedplus::P6) continue;
                         uint64_t fj_start = c.traffic_offsets[_flow_hop.first][_flow_hop.second];
                         uint64_t fj_len = flow_j.getFrameLength() * link.getSrcPort().getMacrotick();
-                        size_t fj_cur_snd_times = c.link_hyperperiod[link.getId()] / flow_j.getPeriod();
-//                        size_t count_hij = 0;
-                        for (size_t k = 0; k < fj_cur_snd_times; ++k) {
-                            uint64_t fj_start = c.traffic_offsets[_flow_hop.first][_flow_hop.second] + k * flow_j.getPeriod();
-                            int d = fi_mid - fj_start;
-                            if (std::abs(d) <= dist) {
-                                SPDLOG_LOGGER_TRACE(spdlog::get("console"),
-                                                    "NO COLLISION CHECK FAILED, flow[{}] and flow[{}]", flowId,
-                                                    flow_j.getId());
+                        int d = fi_mid % flow_j.getPeriod() - fj_start % flow_j.getPeriod();
+                        if (std::abs(d) <= dist) {
+                            SPDLOG_LOGGER_TRACE(spdlog::get("console"),
+                                                "NO COLLISION CHECK FAILED, flow[{}] and flow[{}]", flowId,
+                                                flow_j.getId());
+                            return false;
+                        }
+                        if (d > 0 && fi_start < (fj_start + fj_len + schedplus::IFG_TIME)) {
+                            if (j > srcSendTimes)
                                 return false;
-                            }
-                            /* Queue cache constraint check */
-                            if (d > 0 && fi_start < (fj_start + fj_len + schedplus::IFG_TIME)) {
-                                if (j > srcSendTimes)
-                                    return false;
-                                uint64_t q_delay = fj_start + fj_len + schedplus::IFG_TIME - fi_start;
-                                c.p5_traffic_offsets[flowId][i][j] += q_delay;
-                                count++;
-                            }
+                            uint64_t q_delay = fj_start + fj_len + schedplus::IFG_TIME - fi_start;
+                            c.p5_traffic_offsets[flowId][i][j] += q_delay;
+                            count++;
                         }
                     }
                 }
@@ -247,91 +244,6 @@ private:
                 }
             }
         }
-
-//                for (size_t j = 0; j < srcSendTimes; ++j) {
-//
-//                    uint64_t fi_start = c.p5_traffic_offsets[flowId][i][j];
-//                    uint64_t fi_mid = fi_start + fi_len / 2 + j * flow_i.getPeriod();
-//                    uint32_t collision_flow_id = UINT32_MAX;
-//                    for (auto const &_flow_hop: c.link_flows[link.getId()]) {
-//                        auto const &flow_j = flows[_flow_hop.first].get();
-//                        /* check queue cache with isochronous flows */
-//                        if (flow_j.getPriorityCodePoint() != schedplus::P6) continue;
-//                        uint64_t fj_start = c.traffic_offsets[_flow_hop.first][_flow_hop.second];
-//                        uint64_t fj_len = flow_j.getFrameLength() * link.getSrcPort().getMacrotick();
-//                        uint64_t hij = Util::lcm(flow_i.getPeriod(), flow_j.getPeriod());
-//                        uint64_t fi_snd_times_hij = hij / flow_i.getPeriod();
-//                        if (c.link_hyperperiod[link.getId()] % hij != 0) {
-//                            SPDLOG_LOGGER_ERROR(spdlog::get("console"), "c.link_hyperperiod[link.getId()] % hij not zero: {}", c.link_hyperperiod[link.getId()] % hij);
-//                        }
-//                        size_t count_hij = 0;
-//                        for (size_t k = 0; k < c.link_hyperperiod[link.getId()] / flow_j.getPeriod(); ++k) {
-//                            uint64_t _fj_start = fj_start + k * flow_j.getPeriod();
-//                            int d = fi_mid - _fj_start;
-//                            if (std::abs(d) <= dist) {
-//                                SPDLOG_LOGGER_TRACE(spdlog::get("console"),
-//                                                    "NO COLLISION CHECK FAILED, flow[{}] and flow[{}]", flowId,
-//                                                    flow_j.getId());
-//                                return false;
-//                            }
-//                            /* Queue cache constraint check */
-//                            if (d > 0 && fi_start < (fj_start + fj_len + schedplus::IFG_TIME)) {
-//                                if (collision_flow_id != UINT32_MAX && collision_flow_id != flow_j.getId()) {
-//                                    
-//                                    return false;
-//                                }
-////                                if (collision_flow_id != UINT32_MAX && collision_flow_id == flow_j.getId())
-////                                    continue;
-//                                collision_flow_id = flow_j.getId();
-//
-//                                if (oss.str().empty()) oss << std::endl << "======start cache check======" << std::endl;
-//                                uint64_t q_delay = fj_start + fj_len + schedplus::IFG_TIME - fi_start;
-//                                c.p5_traffic_offsets[flowId][i][j] += q_delay;
-//                                count_hij++;
-////                                for (size_t l = j; l < srcSendTimes;) {
-////
-////                                    count++;
-////                                    SPDLOG_LOGGER_TRACE(spdlog::get("console"),
-////                                                        "cur: c.p5_traffic_offsets[{}][{}][{}] = {}", flowId, i, k,
-////                                                        c.p5_traffic_offsets[flowId][i][k]);
-////                                    l += fi_snd_times_hij;
-////                                }
-//
-//                                oss << "flow[" << flowId << "].route: " << route.toString() << std::endl;
-//                                oss << "flow[" << flowId << "] will cache " << count << " time with flow[" << flow_j.getId()
-//                                    << "]"
-//                                    << std::endl;
-//                            }
-//                        }
-//                    }
-//                    c.p5_traffic_offsets[flowId][i + 1][j] =
-//                            c.p5_traffic_offsets[flowId][i][j] + fi_len + link.getPropSpeed() * link.getLen();
-//                }
-//                if (links[link.getId()].get().getSrcNode()->getNodeType() == SWITCH) {
-//                    int cache_times_in_super_hyp = count * c.link_hyperperiod[link.getId()] / srcHyp;
-//                    c.link_gcl_size[link.getId()] =
-//                            c.link_gcl_size[link.getId()] - cache_times_in_super_hyp;
-//                    if (c.link_gcl_merge_count.contains(link.getId()))
-//                        c.link_gcl_merge_count[link.getId()] += count;
-//                    else
-//                        c.link_gcl_merge_count[link.getId()] = count;
-//                }
-
-//        for (auto &flow_id: c.cached_flows) {
-//            auto const &flow_i = flows[flow_id].get();
-//            auto const &route = flow_i.getRoutes()[p.selected_route_idx[flow_id]].getLinks();
-//            uint64_t src_hyp = c.link_hyperperiod[route[0].get().getId()];
-//            uint64_t src_send_times = src_hyp / flow_i.getPeriod();
-//            for (size_t i = 1; i < route.size(); ++i) {
-//                size_t cur_send_times = c.link_hyperperiod[route[i].get().getId()] / flow_i.getPeriod();
-//                for (size_t j = src_send_times; j < cur_send_times; ++j) {
-//                    c.p5_traffic_offsets[flow_id][i][j] =
-//                            c.p5_traffic_offsets[flow_id][i][j % src_send_times] + src_hyp * (j / src_send_times);
-//                }
-//            }
-//        }
-
-
         return true;
     }
 
