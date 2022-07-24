@@ -71,16 +71,19 @@ private:
         uint64_t hpij = Util::lcm(fi_period, fj_period);
         uint64_t dist = (fi_len + fj_len) / 2 + schedplus::IFG_TIME;
         if (fi_period < fj_period) {
+            uint64_t _fi_mid = fi_mid % fi_period;
             for (int k = 0; k < hpij / fj_period; ++k) {
-                int d = (fj_mid + k * (fj_period - fi_period)) % fi_period - fi_mid;
+//                int d = (fj_mid + k * (fj_period - fi_period)) % fi_period - fi_mid;
+                int d = (fj_mid + k * fj_period) % fi_period - _fi_mid;
                 if (std::abs(d) <= dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
                 }
             }
         } else {
+            uint64_t _fj_mid = fj_mid % fj_period;
             for (int k = 0; k < hpij / fi_period; ++k) {
-                int d = (fi_mid + k * (fi_period - fj_period)) % fj_period - fj_mid;
+                int d = (fi_mid + k * fi_period) % fj_period - _fj_mid;
                 if (std::abs(d) <= dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
@@ -256,7 +259,7 @@ public:
                 }
         }
 
-         /* Get variance of current solution */
+        /* Get variance of current solution */
         vector<uint64_t> tmp;
         for (auto const &item: c.link_gcl_size) {
             tmp.emplace_back(item.second);
@@ -339,10 +342,17 @@ public:
     vector<double> calculate_MO_objectives(const GA_Type::thisChromosomeType &X) {
         return {
 //                X.middle_costs.variance,
-                X.middle_costs.e2e,
+                X.middle_costs.total_transmit,
 //                X.middle_costs.ddl,
-                X.middle_costs.total_transmit
+                X.middle_costs.e2e
         };
+    }
+
+    double calculate_SO_total_fitness(const GA_Type::thisChromosomeType &X) {
+        // finalize the cost
+        double final_cost = 0.0;
+        final_cost += X.middle_costs.total_transmit;
+        return final_cost;
     }
 
     void MO_report_generation(
@@ -360,11 +370,26 @@ public:
         std::cout << "}" << std::endl;
     }
 
+    void SO_report_generation(int generation_number,
+                              const EA::GenerationType<TTFlows, MyMiddleCost> &last_generation,
+                              const TTFlows &best_genes) {
+        std::cout << "Generation [" << generation_number << "], "
+                  << "Best=" << last_generation.best_total_cost << ", "
+                  << "Average=" << last_generation.average_cost << ", "
+                  << "Exe_time=" << last_generation.exe_time
+                  << std::endl;
+    }
+
     void save_results(GA_Type &ga_obj, const std::string &ned_file) {
         vector<unsigned int> paretofront_indices = ga_obj.last_generation.fronts[0];
-        std::string result = OUT_LOCATION;
-        result.append("/solution_report.txt");
+        std::string result = RESULT_REPORT;
+        result.append("/solution_report_nowait_schedule.txt");
         std::ofstream out_file(result);
+        out_file << std::setw(3) << "id"
+                 //                    << std::setw(20) << X.middle_costs.e2e
+                 << std::setw(20) << "variance"
+//                 << std::setw(20) << "total_cache"
+                 << std::setw(20) << "total_transmit" << std::endl;
         for (unsigned int i: paretofront_indices) {
             /* set flow offset and route index */
             auto &X = ga_obj.last_generation.chromosomes[i];
@@ -379,29 +404,27 @@ public:
             }
             saveGCL(X.genes, X.middle_costs);
 
-            std::string route_file = OUT_LOCATION;
+            std::string route_file = OUT_LOCATION_NOWAIT;
             route_file.append("/" + std::to_string(i) + "_SmallRouting.xml");
             save_route(X.genes, X.middle_costs, route_file);
 
-            std::string gcl_file = OUT_LOCATION;
+            std::string gcl_file = OUT_LOCATION_NOWAIT;
             gcl_file.append("/" + std::to_string(i));
             saveGCL(gcl_file, X.middle_costs);
 
             std::string route_file_name = std::to_string(i) + "_SmallRouting.xml";
             std::string gcl_file_name = std::to_string(i) + "_SmallGCL.xml";
-            std::string ini_file = OUT_LOCATION;
+            std::string ini_file = OUT_LOCATION_NOWAIT;
             ini_file.append("/" + std::to_string(i) + "_SmallTopology.ini");
             saveIni(route_file_name, gcl_file_name, ini_file, ned_file, i);
 
-            std::string event_file = OUT_LOCATION;
+            std::string event_file = OUT_LOCATION_NOWAIT;
             event_file.append("/" + std::to_string(i) + "_event.txt");
             saveEvent(X.genes, X.middle_costs, event_file);
 
             out_file
                     << std::setw(3) << i
-                    //                    << std::setw(20) << X.middle_costs.e2e
-                    //                    << std::setw(20) << X.middle_costs.ddl
-                    << std::setw(20) << X.middle_costs.variance
+                    << std::setw(20) << std::setprecision(8) << X.middle_costs.variance
                     << std::setw(20) << (uint64_t) X.middle_costs.total_transmit << std::endl;
             for (auto const &[link_id, gcl_merge_count]: X.middle_costs.link_gcl_merge_count) {
                 out_file << "link[" << link_id << "] merge " << gcl_merge_count << " times" << std::endl;
@@ -458,7 +481,7 @@ public:
             output << std::right << std::setw(10) << std::to_string(event.getEnd());
             output << std::right << std::setw(10) << event.getType();
             output << std::right << std::setw(10) << event.getNode()->getName();
-            output << std::right << std::setw(5) << std::to_string(event.getFlow()->getId());
+            output << std::right << std::setw(5) << std::to_string(event.getFlow()->getId() + 1);
             output << std::right << std::setw(5) << std::to_string(event.getHop()) << std::endl;
         }
         output.close();
@@ -533,7 +556,7 @@ public:
                             uint32_t _flow_id = flow_id + 1;
                             pugi::xml_node xmulticast_addr = xforward.append_child("multicastAddress");
                             pugi::xml_attribute xmac = xmulticast_addr.append_attribute("macAddress");
-                            std::string mac = "255-0-00-00-00-" + std::to_string(_flow_id);
+                            std::string mac = "255-0-00-00-00-" + std::to_string(flow_id + 1);
                             if (_flow_id < 10) {
                                 mac.insert(mac.length() - 1, "0");
                             }
@@ -674,7 +697,7 @@ public:
                 std::string size_str = std::to_string(flow.get().getFrameLength() - schedplus::HEADER_LEN) + "B";
                 xsize.append_child(pugi::node_pcdata).set_value(size_str.c_str());
                 pugi::xml_node xflowId = xentry.append_child("flowId");
-                xflowId.append_child(pugi::node_pcdata).set_value(std::to_string(flow.get().getId()).c_str());
+                xflowId.append_child(pugi::node_pcdata).set_value(std::to_string(flow.get().getId() + 1).c_str());
                 pugi::xml_node xflowPeriod = xentry.append_child("period");
                 std::string period_str = std::to_string(flow.get().getPeriod()) + "ns";
                 xflowPeriod.append_child(pugi::node_pcdata).set_value(period_str.c_str());
