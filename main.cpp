@@ -2,14 +2,15 @@
 #define SPDLOG_TRACE_ON
 #define SPDLOG_DEBUG_ON
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include "lib/spdlog/include/spdlog/spdlog.h"
+#include "lib/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
 #include "src/solutions/GA.h"
 #include "src/solutions/GA_4sw_ring.h"
 #include "src/solutions/GA_line_2_1.h"
 #include "src/solutions/GA_line_2_2.h"
 #include "lib/CLI11/include/CLI/CLI.hpp"
 #include "src/solutions/NoWait.h"
+#include "src/solutions/Wait.h"
 
 namespace spd = spdlog;
 
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
 //        auto console = spd::stdout_color_mt("console");
         auto sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
         auto console = std::make_shared<spdlog::logger>("console", sink);
-        console->set_level(spdlog::level::trace);
+        console->set_level(spdlog::level::info);
         spd::set_default_logger(console);
         spd::set_pattern("[%H:%M:%S] [%^%l%$] %s:%# %v");
 
@@ -90,19 +91,20 @@ int main(int argc, char **argv) {
             flowGroupPcp[flows[i].getPriorityCodePoint()].emplace_back(i);
         }
 
-//        MyFunctions myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
-        NoWait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
-        std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/*";
+//        NoWait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
+        Wait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
+        std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/wait/*";
         system(delete_file.c_str());
         EA::Chronometer timer;
         timer.tic();
 
         GA_Type ga_obj;
         ga_obj.problem_mode = EA::GA_MODE::NSGA_III;
+//        ga_obj.problem_mode = EA::GA_MODE::SOGA;
         ga_obj.multi_threading = !flag_debug;
         ga_obj.dynamic_threading = !flag_debug;
         ga_obj.verbose = false;
-        ga_obj.population = 50;
+        ga_obj.population = 100;
         ga_obj.generation_max = 100;
 
         using std::bind;
@@ -110,22 +112,25 @@ int main(int argc, char **argv) {
         using std::placeholders::_2;
         using std::placeholders::_3;
 
-//        ga_obj.calculate_MO_objectives = bind(&MyFunctions::calculate_MO_objectives, &myobject, _1);
-//        ga_obj.init_genes =  bind(&MyFunctions::init_genes, &myobject, _1, _2);
-//        ga_obj.eval_solution = bind(&MyFunctions::eval_solution, &myobject, _1, _2);
-//        ga_obj.mutate = bind(&MyFunctions::mutate, &myobject, _1, _2, _3);
-//        ga_obj.crossover = bind(&MyFunctions::crossover, &myobject, _1, _2, _3);
-//        ga_obj.MO_report_generation = bind(&MyFunctions::MO_report_generation, &myobject, _1, _2, _3);
+//        ga_obj.calculate_MO_objectives = bind(&NoWait::calculate_MO_objectives, &myobject, _1);
+//        ga_obj.init_genes =  bind(&NoWait::init_genes, &myobject, _1, _2);
+//        ga_obj.eval_solution = bind(&NoWait::eval_solution, &myobject, _1, _2);
+//        ga_obj.mutate = bind(&NoWait::mutate, &myobject, _1, _2, _3);
+//        ga_obj.crossover = bind(&NoWait::crossover, &myobject, _1, _2, _3);
+//        ga_obj.MO_report_generation = bind(&NoWait::MO_report_generation, &myobject, _1, _2, _3);
 
-        ga_obj.calculate_MO_objectives = bind(&NoWait::calculate_MO_objectives, &myobject, _1);
-        ga_obj.init_genes =  bind(&NoWait::init_genes, &myobject, _1, _2);
-        ga_obj.eval_solution = bind(&NoWait::eval_solution, &myobject, _1, _2);
-        ga_obj.mutate = bind(&NoWait::mutate, &myobject, _1, _2, _3);
-        ga_obj.crossover = bind(&NoWait::crossover, &myobject, _1, _2, _3);
-        ga_obj.MO_report_generation = bind(&NoWait::MO_report_generation, &myobject, _1, _2, _3);
+//        ga_obj.calculate_SO_total_fitness = bind(&NoWait::calculate_SO_total_fitness, &myobject, _1);
+//        ga_obj.SO_report_generation = bind(&NoWait::SO_report_generation, &myobject, _1, _2, _3);
 
-        ga_obj.crossover_fraction = 0.9;
-        ga_obj.mutation_rate = 0.4;
+        ga_obj.calculate_MO_objectives = bind(&Wait::calculate_MO_objectives, &myobject, _1);
+        ga_obj.init_genes =  bind(&Wait::init_genes, &myobject, _1, _2);
+        ga_obj.eval_solution = bind(&Wait::eval_solution, &myobject, _1, _2);
+        ga_obj.mutate = bind(&Wait::mutate, &myobject, _1, _2, _3);
+        ga_obj.crossover = bind(&Wait::crossover, &myobject, _1, _2, _3);
+        ga_obj.MO_report_generation = bind(&Wait::MO_report_generation, &myobject, _1, _2, _3);
+
+        ga_obj.crossover_fraction = 0.7;
+        ga_obj.mutation_rate = 0.5;
         ga_obj.solve();
 
         std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
