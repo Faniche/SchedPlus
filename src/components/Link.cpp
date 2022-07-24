@@ -2,7 +2,7 @@
 // Created by faniche on 2022/1/24.
 //
 
-#include <spdlog/spdlog.h>
+#include "../../lib/spdlog/include/spdlog/spdlog.h"
 
 #include <utility>
 #include "Link.h"
