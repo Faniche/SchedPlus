@@ -2,7 +2,7 @@
 // Created by faniche on 2022/3/16.
 //
 
-#include <spdlog/spdlog.h>
+#include "../lib/spdlog/include/spdlog/spdlog.h"
 #include "Route.h"
 
 // A recursive function to print all paths from 'u' to 'd'.

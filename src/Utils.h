@@ -12,7 +12,7 @@
 #define SCHEDPLUS_UTILS_H
 
 #include <random>
-#include <spdlog/spdlog.h>
+#include "../lib/spdlog/include/spdlog/spdlog.h"
 #include <queue>
 #include "../lib/json/json.hpp"
 #include "components/Flow.h"
