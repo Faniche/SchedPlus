@@ -504,39 +504,51 @@ public:
         return true;
     }
 
+    double get_shrink_scale (int n_generation, const std::function<double(void)> &rnd01) {
+        double scale = (n_generation <= 5 ? 1.0 : 1.0 / sqrt(n_generation - 5 + 1));
+        if (rnd01() < 0.4)
+            scale *= scale;
+        else if (rnd01() < 0.1)
+            scale = 1.0;
+        return scale;
+    }
+
     TTFlows mutate(
             const TTFlows &X_base,
             const std::function<double(void)> &rnd01,
             double shrink_scale) {
         TTFlows X_new;
+        
         const double mu = 0.2 * shrink_scale; // mutation radius (adjustable)
         X_new = X_base;
         for (int i = 0; i < flows.size(); ++i) {
             auto &flow = flows[i];
-            int64_t offset = 0, route = 0;
             bool in_range = true;
             int srcTransDelay =
                     flow.get().getFrameLength() * ((EndSystem *) flow.get().getSrc())->getPort().getMacrotick();
             int64_t up_bound = flow.get().getPeriod() - srcTransDelay;
-            do {
-                if (flow.get().getRoutes().size() > 1) {
+            int64_t route;
+            if (flow.get().getRoutes().size() > 1) {
+                do {
                     route = X_base.selected_route_idx[i] + mu * (rnd01() - rnd01());
                     in_range = route >= 0 && route < flow.get().getRoutes().size();
-                } else {
-                    route = 0;
+                } while (!in_range);
+            } else      route = 0;
+            X_new.selected_route_idx[i] = (uint64_t) route;
+            if (flow.get().getPriorityCodePoint() == schedplus::P6) {
+                int64_t tmp = flow.get().getDeliveryGuarantees()[0].getLowerVal() - flow.get().getRoutes()[route].getE2E();
+                up_bound = std::min(up_bound, tmp);
+            }
+            do {
+                double offset = X_base.offsets[i] / pow(10, 9);
+                double tmp = mu * (rnd01() - rnd01());
+                offset = offset + tmp;
+                offset *= pow(10, 9);
+                in_range = in_range && (offset >= 0) && (offset < up_bound);
+                if (in_range) {
+                    X_new.offsets[i] = (uint64_t) offset;
                 }
-                offset = X_base.offsets[i] + mu * (rnd01() - rnd01());
-                if (flow.get().getPriorityCodePoint() == schedplus::P6) {
-                    int64_t tmp = flow.get().getDeliveryGuarantees()[0].getLowerVal() - flow.get().getRoutes()[route].getE2E();
-                    up_bound = std::min(up_bound, tmp);
-                    in_range = in_range && (offset >= 0) && (offset < up_bound);
-                } else if (flow.get().getPriorityCodePoint() == schedplus::P5) {
-                    in_range = in_range && (offset >= 0) && (offset < up_bound);
-                }
-
             } while (!in_range);
-            X_new.offsets[i] = offset;
-            X_new.selected_route_idx[i] = route;
         }
         return X_new;
     }
