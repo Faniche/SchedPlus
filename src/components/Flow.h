@@ -117,6 +117,7 @@ public:
 
     static uint16_t getRandomFrameLength(schedplus::PRIORITY_CODE_POINT pcp);
 
+    void deleteRoute(uint64_t i);
 };
 
 

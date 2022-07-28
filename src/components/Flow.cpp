@@ -264,3 +264,7 @@ void Flow::setDest(Node *_dest) {
     Flow::dest = _dest;
 }
 
+void Flow::deleteRoute(uint64_t i) {
+    routes.erase(routes.begin() + i);
+}
+
