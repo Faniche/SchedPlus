@@ -158,6 +158,7 @@ std::string Flow::toString(std::ostringstream &oss) {
     oss << "\t" << R"("priorityCodePoint": )" << priorityCodePoint << "," << std::endl;
     oss << "\t" << R"("srcNode": ")" << src->getName() << "," << std::endl;
     oss << "\t" << R"("destNode": ")" << dest->getName() << "," << std::endl;
+    oss << "\t" << R"("deliveryGuarantee": ")" << deliveryGuarantees[0].getLowerVal() << "," << std::endl;
     oss << "\t" << R"("isCritical": )" << std::boolalpha << isCritical << "," << std::endl;
     oss << "\t" << R"("rep": )" << std::to_string(rep) << "," << std::endl;
     oss << "\t" << R"("multicast": )" << std::boolalpha << multicast;
