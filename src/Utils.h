@@ -135,6 +135,7 @@ public:
                 uint64_t prop_delay = link->getLen() * link->getPropSpeed();
                 tmp += trans_delay + proc_delay + prop_delay;
             }
+            if (tmp > flow.getDeliveryGuarantees()[0].getLowerVal()) continue;
             route.setE2E(tmp);
             flow.addRoutes(route);
         }
@@ -164,7 +165,9 @@ public:
             jflow["length"] = flow.getFrameLength();
             jflow["pcp"] = flow.getPriorityCodePoint();
             jflow["src"] = flow.getSrc()->getId();
+            jflow["src_str"] = flow.getSrc()->getName();
             jflow["dest"] = flow.getDest()->getId();
+            jflow["dest_str"] = flow.getDest()->getName();
             jflows.push_back(jflow);
         }
         oss << jflows;
