@@ -11,7 +11,6 @@
 #include "../../lib/openGA/openGA.hpp"
 #include "../../lib/json/json.hpp"
 #include "GA_Solution.h"
-#include "MyFunctions.h"
 
 using json = nlohmann::json;
 

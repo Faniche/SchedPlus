@@ -10,7 +10,6 @@
 #include "../components/Flow.h"
 #include "../../lib/openGA/openGA.hpp"
 #include "GA_Solution.h"
-#include "MyFunctions.h"
 
 class GA_line_2_2 {
 public:
@@ -30,6 +29,9 @@ public:
         Node *sw0 = createNode(SWITCH, "switch0", 30000);
         Node *sw1 = createNode(SWITCH, "switch1", 30000);
         nodes.insert(nodes.end(), {es00, es01, sw0, sw1});
+        for (int i = 0; i < nodes.size(); ++i) {
+            nodes[i]->setId(i);
+        }
         esList.insert(esList.end(), {es00, es01});
         swList.insert(swList.end(), {sw0, sw1});
         for (node_idx i = 0; i < nodes.size(); ++i) {
@@ -114,6 +116,9 @@ public:
         for (node_idx i = 0; i < nodes.size(); ++i) {
             nodeMap[i] = nodes[i];
         }
+        for (node_idx i = 0; i < nodes.size(); ++i) {
+            nodeMap[i] = nodes[i];
+        }
 
         /* Links connected end systems to switches */
         FullDuplexLink link_00(es00, sw0, ((EndSystem *) es00)->getPort(), ((Switch *) sw0)->getPorts()[0]);
@@ -138,29 +143,31 @@ public:
         json jflows;
         flow_file >> jflows;
         for (json::iterator item_flow = jflows.begin(); item_flow != jflows.end(); ++item_flow) {
-            for (json::iterator flow_prop = item_flow->begin(); flow_prop != item_flow->end(); ++flow_prop) {
-                Flow flow((*flow_prop)["id"], (*flow_prop)["offset"], (*flow_prop)["period"], (*flow_prop)["length"],
-                          (*flow_prop)["pcp"]);
-                node_idx src = (*flow_prop)["src"];
-                node_idx dest = (*flow_prop)["dest"];
-                flow.setSrc(nodeMap.at(src));
-                flow.setDest(nodeMap.at(dest));
-                if ((*flow_prop)["pcp"] == schedplus::P6) {
-                    /* unit: ns*/
-                    DeliveryGuarantee deliveryGuarantee(DDL, flow.getPeriod());
-                    flow.addDeliveryGuarantee(deliveryGuarantee);
-                } else if ((*flow_prop)["pcp"] == schedplus::P5) {
-                    /* Typically less than 90% of period. */
-                    /* unit: ns*/
-                    DeliveryGuarantee deliveryGuarantee(E2E, flow.getPeriod() / 10);
-                    flow.addDeliveryGuarantee(deliveryGuarantee);
-                }
-                Util::calAllRoutes(nodeMap, flow, graph, links);
-                flows.push_back(flow);
-                oss.str("");
-                flow.toString(oss);
-                spdlog::get("console")->info("flow_{}: {}", flow.getId(), oss.str());
+            uint32_t flow_id = (*item_flow)["id"].get<unsigned>();
+            uint64_t offset = (*item_flow)["offset"].get<unsigned>();
+            uint64_t period = (*item_flow)["period"].get<unsigned>();
+            uint64_t length = (*item_flow)["length"].get<unsigned>();
+            int pcp = ((*item_flow)["pcp"].get<int>());
+            Flow flow(flow_id, offset, period, length, static_cast<schedplus::PRIORITY_CODE_POINT>(pcp));
+            node_idx src = (*item_flow)["src"].get<unsigned>();
+            node_idx dest = (*item_flow)["dest"].get<unsigned>();
+            flow.setSrc(nodeMap.at(src));
+            flow.setDest(nodeMap.at(dest));
+            if (pcp == schedplus::P6) {
+                /* unit: ns*/
+                DeliveryGuarantee deliveryGuarantee(DDL, flow.getPeriod());
+                flow.addDeliveryGuarantee(deliveryGuarantee);
+            } else if (pcp == schedplus::P5) {
+                /* Typically less than 90% of period. */
+                /* unit: ns*/
+                DeliveryGuarantee deliveryGuarantee(E2E, flow.getPeriod() / 10);
+                flow.addDeliveryGuarantee(deliveryGuarantee);
             }
+            Util::calAllRoutes(nodeMap, flow, graph, links);
+            flows.push_back(flow);
+            oss.str("");
+            flow.toString(oss);
+            spdlog::get("console")->info("flow_{}: {}", flow.getId(), oss.str());
         }
     }
 };

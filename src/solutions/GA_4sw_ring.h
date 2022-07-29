@@ -10,7 +10,6 @@
 #include "../components/Flow.h"
 #include "../../lib/openGA/openGA.hpp"
 #include "GA_Solution.h"
-#include "MyFunctions.h"
 
 class Small4SwRing {
 public:

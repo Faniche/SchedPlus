@@ -11,7 +11,7 @@
 #include "../components/Flow.h"
 #include "../../lib/openGA/openGA.hpp"
 #include "GA_Solution.h"
-#include "MyFunctions.h"
+#include "../Utils.h"
 
 void openGACal(const size_t flow_num,
                std::vector<Node *> &nodes,
