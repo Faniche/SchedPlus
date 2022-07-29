@@ -31,7 +31,10 @@ struct MyMiddleCost {
     map<uint32_t, map<uint8_t, map<uint64_t, uint64_t>>> p5_traffic_offsets;
 
     /*   flow_id     snd_times   e2e  */
-    map<uint32_t, map<uint64_t, uint64_t>> p5_e2e;
+    map<uint32_t, vector<std::pair<uint64_t, uint64_t>>> p5_e2e;
+
+    /*   flow_id  jitter  */
+    map<uint32_t, double> p5_cached_jitter;
 
     /*  link_id                    flow_id   hop */
     map<uint32_t, vector<std::pair<uint32_t, uint8_t>>> link_flows;
@@ -56,7 +59,11 @@ struct MyMiddleCost {
 
     double total_transmit;
 
+    double v_transmit;
+
     double total_cache;
+
+    double total_gcl;
 //    double delayQueue = 0;
 //
 //    double bandwidthUsage = 0;

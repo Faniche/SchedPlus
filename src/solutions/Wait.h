@@ -136,26 +136,6 @@ private:
         return true;
     }
 
-    bool checkP5E2E(const TTFlows &p, MyMiddleCost &c) {
-        for (auto const &flow_id: c.cached_flows) {
-            auto const &flow = flows[flow_id].get();
-            uint64_t dg_low_val = flow.getDeliveryGuarantees()[0].getLowerVal();
-            auto const &route = flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks();
-            size_t route_size = route.size();
-            size_t fi_src_snd_times = c.link_hyperperiod[route[0].get().getId()] / flow.getPeriod();
-            for (int i = 0; i < fi_src_snd_times; ++i) {
-                uint64_t final = c.p5_traffic_offsets[flow_id][route.size()][i];
-                uint64_t first = c.p5_traffic_offsets[flow_id][0][i];
-                uint64_t e2e = final - first;
-                if (e2e >= dg_low_val)
-                    return false;
-                if (c.e2e < e2e)
-                    c.e2e = e2e;
-            }
-        }
-        return true;
-    }
-
     bool checkQueueCache(const TTFlows &p, MyMiddleCost &c, std::ostringstream &oss) {
         for (auto const &flowId: c.cached_flows) {
             auto const &flow_i = flows[flowId].get();
@@ -346,6 +326,39 @@ private:
         return true;
     }
 
+    bool checkP5E2E(const TTFlows &p, MyMiddleCost &c) {
+        for (auto const &flow_id: c.cached_flows) {
+            auto const &flow = flows[flow_id].get();
+            uint64_t dg_low_val = flow.getDeliveryGuarantees()[0].getLowerVal();
+            auto const &route = flow.getRoutes()[p.selected_route_idx[flow_id]].getLinks();
+            size_t route_size = route.size();
+            size_t fi_src_snd_times = c.link_hyperperiod[route[0].get().getId()] / flow.getPeriod();
+            for (int i = 0; i < fi_src_snd_times; ++i) {
+                uint64_t final = c.p5_traffic_offsets[flow_id][route.size()][i];
+                uint64_t first = c.p5_traffic_offsets[flow_id][0][i];
+                uint64_t e2e = final - first;
+                if (e2e >= dg_low_val)
+                    return false;
+                if (c.e2e < e2e)
+                    c.e2e = e2e;
+                c.p5_e2e[flow_id].push_back(std::pair(i, e2e));
+            }
+        }
+        vector<uint64_t> diff;
+        for (auto const &[flow_id, idx_offset]: c.p5_e2e) {
+            for (int i = 0; i< idx_offset.size() - 1; ++i) {
+                if (idx_offset[i].second > idx_offset[i + 1].second)
+                    diff.push_back(idx_offset[i].second - idx_offset[i + 1].second);
+                else
+                    diff.push_back(idx_offset[i + 1].second - idx_offset[i].second);
+            }
+            c.p5_cached_jitter[flow_id] = std::accumulate(diff.begin(), diff.end(), 0) / diff.size();
+            diff.clear();
+            diff.shrink_to_fit();
+        }
+        return true;
+    }
+
 public:
     Wait(vector<Node *> nodes,
          vector<Node *> esList,
@@ -512,8 +525,23 @@ public:
         for (auto const &es: esList) {
             vector<uint64_t> offsets;
             for (auto const &flow: flows) {
-                if (flow.get().getSrc() == es)
-                    offsets.push_back(p.offsets[flow.get().getId()]);
+                uint32_t flow_id = flow.get().getId();
+                if (flow.get().getSrc() == es) {
+                    uint32_t link_id = flow.get().getRoutes()[p.selected_route_idx[flow.get().getId()]].getLinks()[0].get().getId();
+                    bool isCachedFlow = std::any_of(c.cached_flows.begin(), c.cached_flows.end(),
+                                                    [&flow_id](uint32_t flowId) {
+                                                        return flow_id == flowId;
+                                                    });
+                    if (isCachedFlow) {
+                        for (auto const &item: c.p5_traffic_offsets[flow_id][0]) {
+                            offsets.push_back(item.second);
+                        }
+                    } else {
+                        for (int i = 0; i < c.link_hyperperiod[link_id] / flow.get().getPeriod(); ++i) {
+                            offsets.push_back(p.offsets[flow.get().getId()] + i * flow.get().getPeriod());
+                        }
+                    }
+                }
             }
             if (offsets.empty())
                 continue;
@@ -667,21 +695,32 @@ public:
     void save_results(GA_Type &ga_obj, const std::string &ned_file) {
         vector<unsigned int> paretofront_indices = ga_obj.last_generation.fronts[0];
         std::string result = RESULT_REPORT;
+        std::string result_offset_route = RESULT_REPORT;
         result.append("/solution_report_wait_schedule.txt");
+        result_offset_route.append("/solution_report_wait_offset_route.txt");
         std::ofstream out_file(result);
-        out_file
-                << "+---+--------------------+--------------------+--------------------+--------------------+--------------------+"
-                << std::endl;
+        std::ofstream out_file_offset_route(result_offset_route);
+        out_file << "+---+--------------------+--------------------+--------------------+--------------------+--------------------+" << std::endl;
         out_file << "|" << std::setw(3) << "id"
                  << "|" << std::setw(20) << "gcl_variance"
                  << "|" << std::setw(20) << "total_cache"
                  << "|" << std::setw(20) << "varicnce_transmit"
                  << "|" << std::setw(20) << "total_gcl"
                  << "|" << std::setw(20) << "total_transmit" << "|" << std::endl;
+        out_file << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|" << std::endl;
+
+        out_file_offset_route << "+----+------------+------------+" << std::endl;
+        out_file_offset_route << "|" << std::setw(4) << "id"
+                              << "|" << std::setw(12) << "offset"
+                              << "|" << std::setw(12) << "route" << "|"  << std::endl;
+
         for (unsigned int i: paretofront_indices) {
             /* set flow offset and route index */
             auto &X = ga_obj.last_generation.chromosomes[i];
             map<uint32_t, vector<uint32_t>> link_flows;
+            out_file_offset_route << "+------------------------------+" << std::endl;
+            out_file_offset_route << "|         solution" << std::setw(4) << i << "         |"  << std::endl;
+            out_file_offset_route << "+------------------------------+" << std::endl;
             for (auto &flow: flows) {
                 uint32_t flow_id = flow.get().getId();
                 flow.get().setOffset(X.genes.offsets[flow_id]);
@@ -689,7 +728,16 @@ public:
                 for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
                     link_flows[link.get().getId()].emplace_back(flow.get().getId());
                 }
+                out_file_offset_route << "|" << std::setw(4) << flow_id
+                                      << "|" << std::setw(12) << X.genes.offsets[flow_id]
+                                      << "|" << std::setw(12) << X.genes.selected_route_idx[flow_id];
+                if (X.middle_costs.p5_cached_jitter.contains(flow_id)) {
+                    out_file_offset_route << "|" << std::setw(4) << std::setiosflags(std::ios::fixed) << std::setprecision(2)
+                                          << X.middle_costs.p5_cached_jitter[flow_id];
+                }
+                out_file_offset_route << "|"  << std::endl;
             }
+            out_file_offset_route << "+----|------------|------------+" << std::endl;
             spdlog::get("console")->info("==============Solution {}==============", i);
             saveGCL(X.genes, X.middle_costs);
             spdlog::get("console")->info("=======================================");
@@ -711,27 +759,27 @@ public:
             event_file.append("/" + std::to_string(i) + "_event.txt");
             saveEvent(X.genes, X.middle_costs, event_file);
 
-            out_file
-                    << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|"
-                    << std::endl;
             out_file << "|" << std::setw(3) << i
-                     << "|" << std::setw(20) << std::setprecision(8) << X.middle_costs.variance
-                     << "|" << std::setw(20) << std::setprecision(8) << -X.middle_costs.total_cache
-                     << "|" << std::setw(20) << std::setprecision(8) << X.middle_costs.v_transmit
+                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << X.middle_costs.variance
+                     << "|" << std::setw(20) << -X.middle_costs.total_cache
+                     << "|" << std::setw(20) << X.middle_costs.v_transmit
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_gcl
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_transmit << "|" << std::endl;
-            for (auto const &[link_id, gcl_merge_count]: X.middle_costs.link_gcl_merge_count) {
-                if (gcl_merge_count > 0) {
-                    out_file
-                            << "|------------------------------------------------------------------------------------------------------------|"
-                            << std::endl;
-                    out_file << "|link[" << link_id << "] merge " << gcl_merge_count << " times" << std::endl;
-                }
-            }
+//            for (auto const &[link_id, gcl_merge_count]: X.middle_costs.link_gcl_merge_count) {
+//                if (gcl_merge_count > 0) {
+//                    out_file
+//                            << "|------------------------------------------------------------------------------------------------------------|"
+//                            << std::endl;
+//                    out_file << "|link[" << link_id << "] merge " << gcl_merge_count << " times" << std::endl;
+//                }
+//            }
+//            out_file
+//                    << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|"
+//                    << std::endl;
+
         }
-        out_file
-                << "+---+--------------------+--------------------+--------------------+--------------------+--------------------+"
-                << std::endl;
+        out_file.close();
+        out_file_offset_route.close();
     }
 
     void saveEvent(const TTFlows &p, MyMiddleCost &c, const std::string &event_file) {
@@ -806,8 +854,6 @@ public:
             output << std::right << std::setw(5) << std::to_string(event.getHop()) << std::endl;
         }
         output.close();
-
-
     }
 
     void saveGCL(const TTFlows &p, MyMiddleCost &c) {

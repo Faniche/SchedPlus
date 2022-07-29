@@ -274,13 +274,18 @@ public:
         for (auto const &es: esList) {
             vector<uint64_t> offsets;
             for (auto const &flow: flows) {
-                if (flow.get().getSrc() == es)
-                    offsets.push_back(p.offsets[flow.get().getId()]);
+                if (flow.get().getSrc() == es) {
+                    uint32_t link_id = flow.get().getRoutes()[p.selected_route_idx[flow.get().getId()]].getLinks()[0].get().getId();
+                    for (int i = 0; i < c.link_hyperperiod[link_id] / flow.get().getPeriod(); ++i) {
+                        offsets.push_back(p.offsets[flow.get().getId()] + i * flow.get().getPeriod());
+                    }
+                }
             }
             if (offsets.empty())
                 continue;
             mean = std::accumulate(offsets.begin(), offsets.end(), 0.0) / offsets.size();
-            diff.clear();diff.shrink_to_fit();
+            diff.clear();
+            diff.shrink_to_fit();
             diff.assign(offsets.size(), 0);
             std::transform(offsets.begin(), offsets.end(), diff.begin(), [mean](double x) {
                 return x - mean;
@@ -288,12 +293,15 @@ public:
             tmp.push_back(std::sqrt(std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0) / diff.size()));
         }
         mean = std::accumulate(tmp.begin(), tmp.end(), 0.0) / tmp.size();
-        diff.clear();diff.shrink_to_fit();
+        diff.clear();
+        diff.shrink_to_fit();
         diff.assign(tmp.size(), 0);
         std::transform(tmp.begin(), tmp.end(), diff.begin(), [mean](double x) {
             return x - mean;
         });
         c.v_transmit = std::sqrt(std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0) / diff.size());
+        if (c.v_transmit < 1)
+            std::cout << std::endl;
         return true;
     }
 
@@ -432,8 +440,11 @@ public:
     void save_results(GA_Type &ga_obj, const std::string &ned_file) {
         vector<unsigned int> paretofront_indices = ga_obj.last_generation.fronts[0];
         std::string result = RESULT_REPORT;
+        std::string result_offset_route = RESULT_REPORT;
         result.append("/solution_report_nowait_schedule.txt");
+        result_offset_route.append("/solution_report_nowait_offset_route.txt");
         std::ofstream out_file(result);
+        std::ofstream out_file_offset_route(result_offset_route);
         out_file << "+---+--------------------+--------------------+--------------------+--------------------+--------------------+" << std::endl;
         out_file << "|" << std::setw(3) << "id"
                  //                    << std::setw(20) << X.middle_costs.e2e
@@ -442,10 +453,20 @@ public:
                  << "|" << std::setw(20) << "varicnce_transmit"
                  << "|" << std::setw(20) << "total_gcl"
                  << "|" << std::setw(20) << "total_transmit"<< "|"  << std::endl;
+        out_file << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|" << std::endl;
+
+        out_file_offset_route << "+----+------------+------------+" << std::endl;
+        out_file_offset_route << "|" << std::setw(4) << "id"
+                              << "|" << std::setw(12) << "offset"
+                              << "|" << std::setw(12) << "route" << "|"  << std::endl;
+
         for (unsigned int i: paretofront_indices) {
             /* set flow offset and route index */
             auto &X = ga_obj.last_generation.chromosomes[i];
             map<uint32_t, vector<uint32_t>> link_flows;
+            out_file_offset_route << "+------------------------------+" << std::endl;
+            out_file_offset_route << "|         solution" << std::setw(4) << i << "         |"  << std::endl;
+            out_file_offset_route << "+------------------------------+" << std::endl;
             for (auto &flow: flows) {
                 uint32_t flow_id = flow.get().getId();
                 flow.get().setOffset(X.genes.offsets[flow_id]);
@@ -453,42 +474,49 @@ public:
                 for (auto &link: flow.get().getRoutes()[flow.get().getSelectedRouteInx()].getLinks()) {
                     link_flows[link.get().getId()].emplace_back(flow.get().getId());
                 }
+                out_file_offset_route << "|" << std::setw(4) << flow_id
+                                      << "|" << std::setw(12) << X.genes.offsets[flow_id]
+                                      << "|" << std::setw(12) << X.genes.selected_route_idx[flow_id] << "|"  << std::endl;
+                out_file_offset_route << "+----|------------|------------+" << std::endl;
             }
             spdlog::get("console")->info("==============Solution {}==============", i);
             saveGCL(X.genes, X.middle_costs);
             spdlog::get("console")->info("=======================================");
-            std::string route_file = OUT_LOCATION_WAIT;
+            std::string route_file = OUT_LOCATION_NOWAIT;
             route_file.append("/" + std::to_string(i) + "_SmallRouting.xml");
             save_route(X.genes, X.middle_costs, route_file);
 
-            std::string gcl_file = OUT_LOCATION_WAIT;
+            std::string gcl_file = OUT_LOCATION_NOWAIT;
             gcl_file.append("/" + std::to_string(i));
             saveGCL(gcl_file, X.middle_costs);
 
             std::string route_file_name = std::to_string(i) + "_SmallRouting.xml";
             std::string gcl_file_name = std::to_string(i) + "_SmallGCL.xml";
-            std::string ini_file = OUT_LOCATION_WAIT;
+            std::string ini_file = OUT_LOCATION_NOWAIT;
             ini_file.append("/" + std::to_string(i) + "_SmallTopology.ini");
             saveIni(route_file_name, gcl_file_name, ini_file, ned_file, i);
 
-            std::string event_file = OUT_LOCATION_WAIT;
+            std::string event_file = OUT_LOCATION_NOWAIT;
             event_file.append("/" + std::to_string(i) + "_event.txt");
             saveEvent(X.genes, X.middle_costs, event_file);
 
-            out_file << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|" << std::endl;
+
             out_file << "|" << std::setw(3) << i
-                     << "|" << std::setw(20) << std::setprecision(8) << X.middle_costs.variance
+                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << X.middle_costs.variance
                      << "|" << std::setw(20) << 0
-                     << "|" << std::setw(20) << std::setprecision(8) <<  X.middle_costs.v_transmit
-                     << "|" << std::setw(20) << (uint64_t)X.middle_costs.total_gcl
+                     << "|" << std::setw(20) <<  X.middle_costs.v_transmit
+                     << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_gcl
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_transmit << "|"  << std::endl;
-            for (auto const &[link_id, gcl_merge_count]: X.middle_costs.link_gcl_merge_count) {
-                if (gcl_merge_count > 0) {
-                    out_file << "|------------------------------------------------------------------------------------------------------------|" << std::endl;
-                    out_file << "|link[" << link_id << "] merge " << gcl_merge_count << " times" << std::endl;
-                }
-            }
+//            for (auto const &[link_id, gcl_merge_count]: X.middle_costs.link_gcl_merge_count) {
+//                if (gcl_merge_count > 0) {
+//                    out_file << "|------------------------------------------------------------------------------------------------------------|" << std::endl;
+//                    out_file << "|link[" << link_id << "] merge " << gcl_merge_count << " times" << std::endl;
+//                }
+//            }
+//            out_file << "|---|--------------------|--------------------|--------------------|--------------------|--------------------|" << std::endl;
         }
+        out_file.close();
+        out_file_offset_route.close();
     }
 
     void saveEvent(const TTFlows &p, MyMiddleCost &c, const std::string &event_file) {
