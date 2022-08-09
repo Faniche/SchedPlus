@@ -28,6 +28,7 @@ private:
     uint64_t hyperPeriod;
     vector<schedplus::Event> events;
     map<schedplus::PRIORITY_CODE_POINT, vector<uint32_t>> flowGroupPcp;
+    map<uint64_t, vector<uint32_t>> same_period_flow;
 
     void setLinkHyperperiod(const vector<uint64_t> &selected_route_idx, map<uint32_t, uint64_t> &link_hyperperiod) {
         if (!link_hyperperiod.empty()) {
@@ -74,7 +75,7 @@ private:
             uint64_t _fi_mid = fi_mid % fi_period;
             for (int k = 0; k < hpij / fj_period; ++k) {
                 int d = (fj_mid + k * fj_period) % fi_period - _fi_mid;
-                if (std::abs(d) <= dist) {
+                if (std::abs(d) < dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
                 }
@@ -83,7 +84,7 @@ private:
             uint64_t _fj_mid = fj_mid % fj_period;
             for (int k = 0; k < hpij / fi_period; ++k) {
                 int d = (fi_mid + k * fi_period) % fj_period - _fj_mid;
-                if (std::abs(d) <= dist) {
+                if (std::abs(d) < dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
                 }
@@ -180,7 +181,7 @@ private:
                         if (d > 0 && fi_start % flow_j.getPeriod() < (fj_start + fj_len + schedplus::IFG_TIME)) {
                             if (j > srcSendTimes)
                                 return false;
-                            if (flow_i.getPeriod() % flow_j.getPeriod() != 0)
+                            if (i > 0 && flow_i.getPeriod() % flow_j.getPeriod() != 0)
                                 return false;
                             uint64_t q_delay = fj_start + fj_len + schedplus::IFG_TIME - fi_start % flow_j.getPeriod();
                             c.total_cache += q_delay;
@@ -204,7 +205,7 @@ private:
                 }
             }
         }
-        c.total_cache = -c.total_cache;
+//        c.total_cache = -c.total_cache;
         return true;
     }
 
@@ -243,7 +244,7 @@ private:
                     for (int k = 0; k < c.p5_traffic_offsets[fj_id][hop_j].size(); ++k) {
                         uint64_t fj_mid = (c.p5_traffic_offsets[fj_id][hop_j][k] + fj_len / 2) % fi_period;
                         int d = fi_mid - fj_mid;
-                        if (std::abs(d) <= dist) {
+                        if (std::abs(d) < dist) {
                             oss << std::endl << "dist = " << dist << ", d = " << d << std::endl;
                             oss << "====P5 mix flows collision check failed====" << std::endl;
                             oss << "flow_i:    " << std::left << std::setw(10) << flow_i.getId()
@@ -301,7 +302,7 @@ private:
                         for (int l = 0; l < c.p5_traffic_offsets[fj_id][hop_j].size(); ++l) {
                             uint64_t fj_mid = (c.p5_traffic_offsets[fj_id][hop_j][l] + fj_len / 2) % fi_period;
                             int d = fi_mid - fj_mid;
-                            if (std::abs(d) <= dist) {
+                            if (std::abs(d) < dist) {
                                 oss << std::endl << "dist = " << dist << ", d = " << d << std::endl;
                                 oss << "===P5 cached flows collision check failed===" << std::endl;
                                 oss << "flow_i:    " << std::left << std::setw(10) << flow_i.getId()
@@ -327,6 +328,9 @@ private:
     }
 
     bool checkP5E2E(const TTFlows &p, MyMiddleCost &c) {
+        if (c.total_cache == 0) {
+            return true;
+        }
         for (auto const &flow_id: c.cached_flows) {
             auto const &flow = flows[flow_id].get();
             uint64_t dg_low_val = flow.getDeliveryGuarantees()[0].getLowerVal();
@@ -346,13 +350,16 @@ private:
         }
         vector<uint64_t> diff;
         for (auto const &[flow_id, idx_offset]: c.p5_e2e) {
-            for (int i = 0; i< idx_offset.size() - 1; ++i) {
+            if (idx_offset.size() == 1) continue;
+            for (int i = 0; i < idx_offset.size() - 1; ++i) {
                 if (idx_offset[i].second > idx_offset[i + 1].second)
                     diff.push_back(idx_offset[i].second - idx_offset[i + 1].second);
                 else
                     diff.push_back(idx_offset[i + 1].second - idx_offset[i].second);
             }
             c.p5_cached_jitter[flow_id] = std::accumulate(diff.begin(), diff.end(), 0) / diff.size();
+            if (c.p5_cached_jitter[flow_id] != 0)
+                std::cout << c.p5_cached_jitter[flow_id];
             diff.clear();
             diff.shrink_to_fit();
         }
@@ -366,12 +373,14 @@ public:
          map<node_idx, Node *> nodeMap,
          vector<DirectedLink> &_links,
          vector<Flow> &_flows,
-         map<schedplus::PRIORITY_CODE_POINT, vector<uint32_t>> _flowGroupPcp) :
+         map<schedplus::PRIORITY_CODE_POINT, vector<uint32_t>> _flowGroupPcp,
+         map<uint64_t, vector<uint32_t>> _same_period_flow) :
             nodes(std::move(nodes)),
             esList(std::move(esList)),
             swList(std::move(swList)),
             nodeMap(std::move(nodeMap)),
-            flowGroupPcp(std::move(_flowGroupPcp)) {
+            flowGroupPcp(std::move(_flowGroupPcp)),
+            same_period_flow(std::move(_same_period_flow)) {
 
         links.assign(_links.begin(), _links.end());
         flows.assign(_flows.begin(), _flows.end());
@@ -422,6 +431,17 @@ public:
                 }
             }
             p.offsets[flow_id] = offset;
+        }
+        for (const auto& [period, flows_id]: same_period_flow) {
+            auto es = (EndSystem *) (flows[flows_id[0]].get().getSrc());
+            uint64_t acc = p.offsets[flows_id[0]]
+                            + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+                            + schedplus::IFG_TIME;
+            for (int i = 1; i < flows_id.size(); ++i) {
+                uint32_t flow_id = flows_id[i];
+                p.offsets[flow_id] = acc;
+                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+            }
         }
     }
 
@@ -620,6 +640,23 @@ public:
                 }
             } while (!in_range);
         }
+        for (const auto& [period, flows_id]: same_period_flow) {
+            vector<uint64_t> tmp_offsets;
+            for (unsigned int i : flows_id) {
+                tmp_offsets.emplace_back(X_new.offsets[i]);
+            }
+            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
+            X_new.offsets[flows_id[0]] = min_offset;
+            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
+            uint64_t acc = X_new.offsets[flows_id[0]]
+                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+                           + schedplus::IFG_TIME;
+            for (int i = 1; i < flows_id.size(); ++i) {
+                uint32_t flow_id = flows_id[i];
+                X_new.offsets[flow_id] = acc;
+                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+            }
+        }
         return X_new;
     }
 
@@ -665,6 +702,23 @@ public:
                 }
             }
             X_new.offsets[i] = offset;
+        }
+        for (const auto& [period, flows_id]: same_period_flow) {
+            vector<uint64_t> tmp_offsets;
+            for (unsigned int i : flows_id) {
+                tmp_offsets.emplace_back(X_new.offsets[i]);
+            }
+            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
+            X_new.offsets[flows_id[0]] = min_offset;
+            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
+            uint64_t acc = X_new.offsets[flows_id[0]]
+                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+                           + schedplus::IFG_TIME;
+            for (int i = 1; i < flows_id.size(); ++i) {
+                uint32_t flow_id = flows_id[i];
+                X_new.offsets[flow_id] = acc;
+                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+            }
         }
         return X_new;
     }
@@ -732,7 +786,7 @@ public:
                                       << "|" << std::setw(12) << X.genes.offsets[flow_id]
                                       << "|" << std::setw(12) << X.genes.selected_route_idx[flow_id];
                 if (X.middle_costs.p5_cached_jitter.contains(flow_id)) {
-                    out_file_offset_route << "|" << std::setw(4) << std::setiosflags(std::ios::fixed) << std::setprecision(2)
+                    out_file_offset_route << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(8)
                                           << X.middle_costs.p5_cached_jitter[flow_id];
                 }
                 out_file_offset_route << "|"  << std::endl;
@@ -760,8 +814,8 @@ public:
             saveEvent(X.genes, X.middle_costs, event_file);
 
             out_file << "|" << std::setw(3) << i
-                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << X.middle_costs.variance
-                     << "|" << std::setw(20) << -X.middle_costs.total_cache
+                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(2) << X.middle_costs.variance
+                     << "|" << std::setw(20) << X.middle_costs.total_cache
                      << "|" << std::setw(20) << X.middle_costs.v_transmit
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_gcl
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_transmit << "|" << std::endl;
