@@ -8,6 +8,7 @@
 #include "src/solutions/GA_4sw_ring.h"
 #include "src/solutions/GA_line_2_1.h"
 #include "src/solutions/GA_line_2_2.h"
+#include "src/solutions/GA_tree.h"
 #include "lib/CLI11/include/CLI/CLI.hpp"
 #include "src/solutions/NoWait.h"
 #include "src/solutions/Wait.h"
@@ -23,6 +24,8 @@ int main(int argc, char **argv) {
     app.add_option("-n, --ned", option_ned_file, "Net description file name");
     int option_flow_number = 2;
     app.add_option("-f, --flows", option_flow_number, "The number of flow");
+    int option_generation_number = 100;
+    app.add_option("-g, --generation", option_generation_number, "The number of generation");
     bool flag_debug = {false};
     app.add_flag("-d, --debug", flag_debug, "debug mode");
     bool flag_random = {false};
@@ -65,6 +68,9 @@ int main(int argc, char **argv) {
                 case 3:
                     Small4SwRing::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
                     break;
+                case 4:
+                    GA_tree::openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
+                    break;
                 default:
                     openGACal(option_flow_number, nodes, esList, swList, nodeMap, links, flows);
                     break;
@@ -81,6 +87,9 @@ int main(int argc, char **argv) {
                 case 3:
                     Small4SwRing::openGACal(nodes, esList, swList, nodeMap, links, flows);
                     break;
+                case 4:
+                    GA_tree::openGACal(nodes, esList, swList, nodeMap, links, flows);
+                    break;
                 default:
                     openGACal(nodes, esList, swList, nodeMap, links, flows);
                     break;
@@ -90,9 +99,28 @@ int main(int argc, char **argv) {
         for (int i = 0; i < flows.size(); ++i) {
             flowGroupPcp[flows[i].getPriorityCodePoint()].emplace_back(i);
         }
+        map<uint64_t, vector<uint32_t>> same_period_flow;
+        for (auto const &flow: flows) {
+            if (flow.getPriorityCodePoint() == schedplus::P6)
+                same_period_flow[flow.getPeriod()].push_back(flow.getId());
+        }
+        vector<uint64_t> del_keys;
+        for (const auto& item: same_period_flow) {
+            if (item.second.size() < 2) {
+                del_keys.push_back(item.first);
+                continue;
+            }
+            for (int i = 1; i < item.second.size(); ++i) {
+                if (flows[item.second[i]].getFrameLength() != flows[item.second[0]].getFrameLength())
+                    del_keys.push_back(item.first);
+            }
+        }
+        for (const auto& item: del_keys) {
+            same_period_flow.erase(item);
+        }
 
 //        NoWait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
-        Wait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp);
+        Wait myobject(nodes, esList, swList, nodeMap, links, flows, flowGroupPcp, same_period_flow);
         std::string delete_file = "rm /home/faniche/Projects/TSN/SchedPlus/cmake-build-debug/xml/small/wait/*";
         system(delete_file.c_str());
         EA::Chronometer timer;
@@ -103,9 +131,9 @@ int main(int argc, char **argv) {
 //        ga_obj.problem_mode = EA::GA_MODE::SOGA;
         ga_obj.multi_threading = !flag_debug;
         ga_obj.dynamic_threading = !flag_debug;
-        ga_obj.verbose = false;
+        ga_obj.verbose = flag_debug;
         ga_obj.population = 100;
-        ga_obj.generation_max = 100;
+        ga_obj.generation_max = option_generation_number;
 
         using std::bind;
         using std::placeholders::_1;
@@ -129,8 +157,10 @@ int main(int argc, char **argv) {
         ga_obj.crossover = bind(&Wait::crossover, &myobject, _1, _2, _3);
         ga_obj.MO_report_generation = bind(&Wait::MO_report_generation, &myobject, _1, _2, _3);
 
+//        ga_obj.get_shrink_scale = bind(&Wait::get_shrink_scale, &myobject, _1, _2);
         ga_obj.crossover_fraction = 0.7;
-        ga_obj.mutation_rate = 0.5;
+        ga_obj.mutation_rate = 0.4;
+
         ga_obj.solve();
 
         std::cout << "The problem is optimized in " << timer.toc() << " seconds." << std::endl;
