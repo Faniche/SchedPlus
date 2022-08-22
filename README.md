@@ -60,4 +60,5 @@ ga_obj.generation_max = 30;
 
 
 Init totally token: 418895094 ms.
-1000    34956s
+1000    34956s、
+

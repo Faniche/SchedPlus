@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 #include "../components/Flow.h"
-#include "../../lib/openGA/openGA.hpp"
+//#include "../../lib/openGA/openGA.hpp"
 #include "GA_Solution.h"
 
 class GA_line_2_2 {
