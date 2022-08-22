@@ -171,7 +171,7 @@ private:
                         if (flow_j.getPriorityCodePoint() != schedplus::P6) continue;
                         uint64_t fj_start = c.traffic_offsets[fj_id][hop_j] % flow_j.getPeriod();
                         int d = fi_mid % flow_j.getPeriod() - fj_start;
-                        if (std::abs(d) <= dist) {
+                        if (std::abs(d) < dist) {
                             SPDLOG_LOGGER_TRACE(spdlog::get("console"),
                                                 "NO COLLISION CHECK FAILED, flow[{}] and flow[{}]", flowId,
                                                 flow_j.getId());
@@ -432,17 +432,17 @@ public:
             }
             p.offsets[flow_id] = offset;
         }
-        for (const auto& [period, flows_id]: same_period_flow) {
-            auto es = (EndSystem *) (flows[flows_id[0]].get().getSrc());
-            uint64_t acc = p.offsets[flows_id[0]]
-                            + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
-                            + schedplus::IFG_TIME;
-            for (int i = 1; i < flows_id.size(); ++i) {
-                uint32_t flow_id = flows_id[i];
-                p.offsets[flow_id] = acc;
-                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
-            }
-        }
+//        for (const auto& [period, flows_id]: same_period_flow) {
+//            auto es = (EndSystem *) (flows[flows_id[0]].get().getSrc());
+//            uint64_t acc = p.offsets[flows_id[0]]
+//                            + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+//                            + schedplus::IFG_TIME;
+//            for (int i = 1; i < flows_id.size(); ++i) {
+//                uint32_t flow_id = flows_id[i];
+//                p.offsets[flow_id] = acc;
+//                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+//            }
+//        }
     }
 
     bool eval_solution(const TTFlows &p, MyMiddleCost &c) {
@@ -640,23 +640,23 @@ public:
                 }
             } while (!in_range);
         }
-        for (const auto& [period, flows_id]: same_period_flow) {
-            vector<uint64_t> tmp_offsets;
-            for (unsigned int i : flows_id) {
-                tmp_offsets.emplace_back(X_new.offsets[i]);
-            }
-            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
-            X_new.offsets[flows_id[0]] = min_offset;
-            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
-            uint64_t acc = X_new.offsets[flows_id[0]]
-                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
-                           + schedplus::IFG_TIME;
-            for (int i = 1; i < flows_id.size(); ++i) {
-                uint32_t flow_id = flows_id[i];
-                X_new.offsets[flow_id] = acc;
-                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
-            }
-        }
+//        for (const auto& [period, flows_id]: same_period_flow) {
+//            vector<uint64_t> tmp_offsets;
+//            for (unsigned int i : flows_id) {
+//                tmp_offsets.emplace_back(X_new.offsets[i]);
+//            }
+//            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
+//            X_new.offsets[flows_id[0]] = min_offset;
+//            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
+//            uint64_t acc = X_new.offsets[flows_id[0]]
+//                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+//                           + schedplus::IFG_TIME;
+//            for (int i = 1; i < flows_id.size(); ++i) {
+//                uint32_t flow_id = flows_id[i];
+//                X_new.offsets[flow_id] = acc;
+//                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+//            }
+//        }
         return X_new;
     }
 
@@ -703,29 +703,29 @@ public:
             }
             X_new.offsets[i] = offset;
         }
-        for (const auto& [period, flows_id]: same_period_flow) {
-            vector<uint64_t> tmp_offsets;
-            for (unsigned int i : flows_id) {
-                tmp_offsets.emplace_back(X_new.offsets[i]);
-            }
-            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
-            X_new.offsets[flows_id[0]] = min_offset;
-            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
-            uint64_t acc = X_new.offsets[flows_id[0]]
-                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
-                           + schedplus::IFG_TIME;
-            for (int i = 1; i < flows_id.size(); ++i) {
-                uint32_t flow_id = flows_id[i];
-                X_new.offsets[flow_id] = acc;
-                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
-            }
-        }
+//        for (const auto& [period, flows_id]: same_period_flow) {
+//            vector<uint64_t> tmp_offsets;
+//            for (unsigned int i : flows_id) {
+//                tmp_offsets.emplace_back(X_new.offsets[i]);
+//            }
+//            uint64_t min_offset = *std::min_element(tmp_offsets.begin(), tmp_offsets.end());
+//            X_new.offsets[flows_id[0]] = min_offset;
+//            auto es = (EndSystem *) flows[flows_id[0]].get().getSrc();
+//            uint64_t acc = X_new.offsets[flows_id[0]]
+//                           + flows[flows_id[0]].get().getFrameLength() * es->getPort().getMacrotick()
+//                           + schedplus::IFG_TIME;
+//            for (int i = 1; i < flows_id.size(); ++i) {
+//                uint32_t flow_id = flows_id[i];
+//                X_new.offsets[flow_id] = acc;
+//                acc += flows[flow_id].get().getFrameLength() * es->getPort().getMacrotick() + schedplus::IFG_TIME;
+//            }
+//        }
         return X_new;
     }
 
     vector<double> calculate_MO_objectives(const GA_Type::thisChromosomeType &X) {
         return {
-                X.middle_costs.variance,
+//                X.middle_costs.variance,
                 X.middle_costs.total_cache,
                 X.middle_costs.v_transmit,
                 X.middle_costs.total_gcl

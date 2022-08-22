@@ -75,7 +75,7 @@ private:
             for (int k = 0; k < hpij / fj_period; ++k) {
 //                int d = (fj_mid + k * (fj_period - fi_period)) % fi_period - fi_mid;
                 int d = (fj_mid + k * fj_period) % fi_period - _fi_mid;
-                if (std::abs(d) <= dist) {
+                if (std::abs(d) < dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
                 }
@@ -84,7 +84,7 @@ private:
             uint64_t _fj_mid = fj_mid % fj_period;
             for (int k = 0; k < hpij / fi_period; ++k) {
                 int d = (fi_mid + k * fi_period) % fj_period - _fj_mid;
-                if (std::abs(d) <= dist) {
+                if (std::abs(d) < dist) {
                     SPDLOG_LOGGER_TRACE(spdlog::get("console"), "dist = {}, d = {}", dist, d);
                     return false;
                 }
@@ -300,8 +300,6 @@ public:
             return x - mean;
         });
         c.v_transmit = std::sqrt(std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0) / diff.size());
-        if (c.v_transmit < 1)
-            std::cout << std::endl;
         return true;
     }
 
@@ -398,7 +396,7 @@ public:
 
     vector<double> calculate_MO_objectives(const GA_Type::thisChromosomeType &X) {
         return {
-                X.middle_costs.variance,
+//                X.middle_costs.variance,
 //                X.middle_costs.total_cache,
                 X.middle_costs.v_transmit,
                 X.middle_costs.total_gcl
@@ -502,7 +500,7 @@ public:
 
 
             out_file << "|" << std::setw(3) << i
-                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << X.middle_costs.variance
+                     << "|" << std::setw(20) << std::setiosflags(std::ios::fixed) << std::setprecision(2) << X.middle_costs.variance
                      << "|" << std::setw(20) << 0
                      << "|" << std::setw(20) <<  X.middle_costs.v_transmit
                      << "|" << std::setw(20) << (uint64_t) X.middle_costs.total_gcl
